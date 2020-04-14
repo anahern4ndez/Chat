@@ -40,11 +40,10 @@ int main()
     // send to socker
     send(SOCKET, cstr, strlen(cstr), 0 );
 
-
     //          -------     SERVER
     // recepcion de server de mensaje
     char *messagebuf = (char*)malloc(sizeof(char) * 30);
-    read(RECEIVE_SOCKET, messagebuf, 8192);
+    read(SOCKET, messagebuf, 8192);
 
     
     // Se deserealiza el string a un objeto Mensaje

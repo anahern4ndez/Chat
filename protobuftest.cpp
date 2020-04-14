@@ -42,20 +42,16 @@ int main()
 
 
     //          -------     SERVER
-    // // recepcion de server de mensaje
-    // char *messagebuf = (char*)malloc(sizeof(char) * 30);
-    // read(RECEIVE_SOCKET, messagebuf, 8192);
-
+    // recepcion de server de mensaje
     char *messagebuf = (char*)malloc(sizeof(char) * 30);
-    recv(SOCKET, messagebuf, 8192, 0);
-    string message(messagebuf);
+    read(RECEIVE_SOCKET, messagebuf, 8192);
 
-    cout << message << " fdsafdsa " << endl;
+    
     // Se deserealiza el string a un objeto Mensaje
     ClientMessage receivedMessage;
     // char *test = static_cast<char*>(messagebuf);
-    // receivedMessage.ParseFromString(binary); //no debe ser binary, debe ser messagebuf
-    receivedMessage.ParseFromString(message);
+    receivedMessage.ParseFromString(binary); //no debe ser binary, debe ser messagebuf
+    // receivedMessage.ParseFromString(message);
 
 
     // Print de mensaje recibido 

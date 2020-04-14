@@ -25,6 +25,7 @@ extern PROTOBUF_INTERNAL_EXPORT_mensaje_2eproto ::PROTOBUF_NAMESPACE_ID::interna
 extern PROTOBUF_INTERNAL_EXPORT_mensaje_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DirectMessageRequest_mensaje_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_mensaje_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DirectMessageResponse_mensaje_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_mensaje_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ErrorResponse_mensaje_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_mensaje_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MyInfoAcknowledge_mensaje_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_mensaje_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MyInfoResponse_mensaje_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_mensaje_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MyInfoSynchronize_mensaje_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_mensaje_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_connectedUserRequest_mensaje_2eproto;
@@ -179,13 +180,14 @@ static void InitDefaultsscc_info_ClientMessage_mensaje_2eproto() {
   ::chat::ClientMessage::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<5> scc_info_ClientMessage_mensaje_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 5, 0, InitDefaultsscc_info_ClientMessage_mensaje_2eproto}, {
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<6> scc_info_ClientMessage_mensaje_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 6, 0, InitDefaultsscc_info_ClientMessage_mensaje_2eproto}, {
       &scc_info_MyInfoSynchronize_mensaje_2eproto.base,
       &scc_info_connectedUserRequest_mensaje_2eproto.base,
       &scc_info_ChangeStatusRequest_mensaje_2eproto.base,
       &scc_info_BroadcastRequest_mensaje_2eproto.base,
-      &scc_info_DirectMessageRequest_mensaje_2eproto.base,}};
+      &scc_info_DirectMessageRequest_mensaje_2eproto.base,
+      &scc_info_MyInfoAcknowledge_mensaje_2eproto.base,}};
 
 static void InitDefaultsscc_info_ConnectedUser_mensaje_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -492,13 +494,15 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_mensaje_2eproto::offsets[] PRO
   PROTOBUF_FIELD_OFFSET(::chat::ClientMessage, changestatus_),
   PROTOBUF_FIELD_OFFSET(::chat::ClientMessage, broadcast_),
   PROTOBUF_FIELD_OFFSET(::chat::ClientMessage, directmessage_),
-  5,
+  PROTOBUF_FIELD_OFFSET(::chat::ClientMessage, acknowledge_),
   6,
+  7,
   0,
   1,
   2,
   3,
   4,
+  5,
   PROTOBUF_FIELD_OFFSET(::chat::ServerMessage, _has_bits_),
   PROTOBUF_FIELD_OFFSET(::chat::ServerMessage, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -539,8 +543,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 102, 108, sizeof(::chat::DirectMessageResponse)},
   { 109, 116, sizeof(::chat::DirectMessage)},
   { 118, 124, sizeof(::chat::ErrorResponse)},
-  { 125, 137, sizeof(::chat::ClientMessage)},
-  { 144, 158, sizeof(::chat::ServerMessage)},
+  { 125, 138, sizeof(::chat::ClientMessage)},
+  { 146, 160, sizeof(::chat::ServerMessage)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -583,7 +587,7 @@ const char descriptor_table_protodef_mensaje_2eproto[] PROTOBUF_SECTION_VARIABLE
   "username\030\003 \001(\t\".\n\025DirectMessageResponse\022"
   "\025\n\rmessageStatus\030\001 \002(\t\"0\n\rDirectMessage\022"
   "\017\n\007message\030\001 \002(\t\022\016\n\006userId\030\002 \002(\t\"%\n\rErro"
-  "rResponse\022\024\n\014errorMessage\030\001 \002(\t\"\240\002\n\rClie"
+  "rResponse\022\024\n\014errorMessage\030\001 \002(\t\"\316\002\n\rClie"
   "ntMessage\022\016\n\006option\030\001 \002(\005\022\016\n\006userId\030\002 \001("
   "\005\022,\n\013synchronize\030\003 \001(\0132\027.chat.MyInfoSync"
   "hronize\0222\n\016connectedUsers\030\004 \001(\0132\032.chat.c"
@@ -591,17 +595,18 @@ const char descriptor_table_protodef_mensaje_2eproto[] PROTOBUF_SECTION_VARIABLE
   "\0132\031.chat.ChangeStatusRequest\022)\n\tbroadcas"
   "t\030\006 \001(\0132\026.chat.BroadcastRequest\0221\n\rdirec"
   "tMessage\030\007 \001(\0132\032.chat.DirectMessageReque"
-  "st\"\250\003\n\rServerMessage\022\016\n\006option\030\001 \002(\005\022)\n\t"
-  "broadcast\030\002 \001(\0132\026.chat.BroadcastMessage\022"
-  "$\n\007message\030\003 \001(\0132\023.chat.DirectMessage\022\"\n"
-  "\005error\030\004 \001(\0132\023.chat.ErrorResponse\022,\n\016myI"
-  "nfoResponse\030\005 \001(\0132\024.chat.MyInfoResponse\022"
-  ":\n\025connectedUserResponse\030\006 \001(\0132\033.chat.Co"
-  "nnectedUserResponse\0228\n\024changeStatusRespo"
-  "nse\030\007 \001(\0132\032.chat.ChangeStatusResponse\0222\n"
-  "\021broadcastResponse\030\010 \001(\0132\027.chat.Broadcas"
-  "tResponse\022:\n\025directMessageResponse\030\t \001(\013"
-  "2\033.chat.DirectMessageResponse"
+  "st\022,\n\013acknowledge\030\010 \001(\0132\027.chat.MyInfoAck"
+  "nowledge\"\250\003\n\rServerMessage\022\016\n\006option\030\001 \002"
+  "(\005\022)\n\tbroadcast\030\002 \001(\0132\026.chat.BroadcastMe"
+  "ssage\022$\n\007message\030\003 \001(\0132\023.chat.DirectMess"
+  "age\022\"\n\005error\030\004 \001(\0132\023.chat.ErrorResponse\022"
+  ",\n\016myInfoResponse\030\005 \001(\0132\024.chat.MyInfoRes"
+  "ponse\022:\n\025connectedUserResponse\030\006 \001(\0132\033.c"
+  "hat.ConnectedUserResponse\0228\n\024changeStatu"
+  "sResponse\030\007 \001(\0132\032.chat.ChangeStatusRespo"
+  "nse\0222\n\021broadcastResponse\030\010 \001(\0132\027.chat.Br"
+  "oadcastResponse\022:\n\025directMessageResponse"
+  "\030\t \001(\0132\033.chat.DirectMessageResponse"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_mensaje_2eproto_deps[1] = {
 };
@@ -627,7 +632,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_men
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_mensaje_2eproto_once;
 static bool descriptor_table_mensaje_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_mensaje_2eproto = {
-  &descriptor_table_mensaje_2eproto_initialized, descriptor_table_protodef_mensaje_2eproto, "mensaje.proto", 1509,
+  &descriptor_table_mensaje_2eproto_initialized, descriptor_table_protodef_mensaje_2eproto, "mensaje.proto", 1555,
   &descriptor_table_mensaje_2eproto_once, descriptor_table_mensaje_2eproto_sccs, descriptor_table_mensaje_2eproto_deps, 17, 0,
   schemas, file_default_instances, TableStruct_mensaje_2eproto::offsets,
   file_level_metadata_mensaje_2eproto, 17, file_level_enum_descriptors_mensaje_2eproto, file_level_service_descriptors_mensaje_2eproto,
@@ -4300,15 +4305,17 @@ void ClientMessage::InitAsDefaultInstance() {
       ::chat::BroadcastRequest::internal_default_instance());
   ::chat::_ClientMessage_default_instance_._instance.get_mutable()->directmessage_ = const_cast< ::chat::DirectMessageRequest*>(
       ::chat::DirectMessageRequest::internal_default_instance());
+  ::chat::_ClientMessage_default_instance_._instance.get_mutable()->acknowledge_ = const_cast< ::chat::MyInfoAcknowledge*>(
+      ::chat::MyInfoAcknowledge::internal_default_instance());
 }
 class ClientMessage::_Internal {
  public:
   using HasBits = decltype(std::declval<ClientMessage>()._has_bits_);
   static void set_has_option(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
+    (*has_bits)[0] |= 64u;
   }
   static void set_has_userid(HasBits* has_bits) {
-    (*has_bits)[0] |= 64u;
+    (*has_bits)[0] |= 128u;
   }
   static const ::chat::MyInfoSynchronize& synchronize(const ClientMessage* msg);
   static void set_has_synchronize(HasBits* has_bits) {
@@ -4329,6 +4336,10 @@ class ClientMessage::_Internal {
   static const ::chat::DirectMessageRequest& directmessage(const ClientMessage* msg);
   static void set_has_directmessage(HasBits* has_bits) {
     (*has_bits)[0] |= 16u;
+  }
+  static const ::chat::MyInfoAcknowledge& acknowledge(const ClientMessage* msg);
+  static void set_has_acknowledge(HasBits* has_bits) {
+    (*has_bits)[0] |= 32u;
   }
 };
 
@@ -4351,6 +4362,10 @@ ClientMessage::_Internal::broadcast(const ClientMessage* msg) {
 const ::chat::DirectMessageRequest&
 ClientMessage::_Internal::directmessage(const ClientMessage* msg) {
   return *msg->directmessage_;
+}
+const ::chat::MyInfoAcknowledge&
+ClientMessage::_Internal::acknowledge(const ClientMessage* msg) {
+  return *msg->acknowledge_;
 }
 ClientMessage::ClientMessage()
   : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
@@ -4387,6 +4402,11 @@ ClientMessage::ClientMessage(const ClientMessage& from)
   } else {
     directmessage_ = nullptr;
   }
+  if (from._internal_has_acknowledge()) {
+    acknowledge_ = new ::chat::MyInfoAcknowledge(*from.acknowledge_);
+  } else {
+    acknowledge_ = nullptr;
+  }
   ::memcpy(&option_, &from.option_,
     static_cast<size_t>(reinterpret_cast<char*>(&userid_) -
     reinterpret_cast<char*>(&option_)) + sizeof(userid_));
@@ -4411,6 +4431,7 @@ void ClientMessage::SharedDtor() {
   if (this != internal_default_instance()) delete changestatus_;
   if (this != internal_default_instance()) delete broadcast_;
   if (this != internal_default_instance()) delete directmessage_;
+  if (this != internal_default_instance()) delete acknowledge_;
 }
 
 void ClientMessage::SetCachedSize(int size) const {
@@ -4429,7 +4450,7 @@ void ClientMessage::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x0000001fu) {
+  if (cached_has_bits & 0x0000003fu) {
     if (cached_has_bits & 0x00000001u) {
       GOOGLE_DCHECK(synchronize_ != nullptr);
       synchronize_->Clear();
@@ -4450,8 +4471,12 @@ void ClientMessage::Clear() {
       GOOGLE_DCHECK(directmessage_ != nullptr);
       directmessage_->Clear();
     }
+    if (cached_has_bits & 0x00000020u) {
+      GOOGLE_DCHECK(acknowledge_ != nullptr);
+      acknowledge_->Clear();
+    }
   }
-  if (cached_has_bits & 0x00000060u) {
+  if (cached_has_bits & 0x000000c0u) {
     ::memset(&option_, 0, static_cast<size_t>(
         reinterpret_cast<char*>(&userid_) -
         reinterpret_cast<char*>(&option_)) + sizeof(userid_));
@@ -4519,6 +4544,13 @@ const char* ClientMessage::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
+      // optional .chat.MyInfoAcknowledge acknowledge = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 66)) {
+          ptr = ctx->ParseMessage(_internal_mutable_acknowledge(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       default: {
       handle_unusual:
         if ((tag & 7) == 4 || tag == 0) {
@@ -4548,13 +4580,13 @@ failure:
 
   cached_has_bits = _has_bits_[0];
   // required int32 option = 1;
-  if (cached_has_bits & 0x00000020u) {
+  if (cached_has_bits & 0x00000040u) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(1, this->_internal_option(), target);
   }
 
   // optional int32 userId = 2;
-  if (cached_has_bits & 0x00000040u) {
+  if (cached_has_bits & 0x00000080u) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(2, this->_internal_userid(), target);
   }
@@ -4599,6 +4631,14 @@ failure:
         7, _Internal::directmessage(this), target, stream);
   }
 
+  // optional .chat.MyInfoAcknowledge acknowledge = 8;
+  if (cached_has_bits & 0x00000020u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        8, _Internal::acknowledge(this), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields(), target, stream);
@@ -4622,7 +4662,7 @@ size_t ClientMessage::ByteSizeLong() const {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x0000001fu) {
+  if (cached_has_bits & 0x0000003fu) {
     // optional .chat.MyInfoSynchronize synchronize = 3;
     if (cached_has_bits & 0x00000001u) {
       total_size += 1 +
@@ -4658,9 +4698,16 @@ size_t ClientMessage::ByteSizeLong() const {
           *directmessage_);
     }
 
+    // optional .chat.MyInfoAcknowledge acknowledge = 8;
+    if (cached_has_bits & 0x00000020u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *acknowledge_);
+    }
+
   }
   // optional int32 userId = 2;
-  if (cached_has_bits & 0x00000040u) {
+  if (cached_has_bits & 0x00000080u) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
         this->_internal_userid());
@@ -4698,7 +4745,7 @@ void ClientMessage::MergeFrom(const ClientMessage& from) {
   (void) cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
-  if (cached_has_bits & 0x0000007fu) {
+  if (cached_has_bits & 0x000000ffu) {
     if (cached_has_bits & 0x00000001u) {
       _internal_mutable_synchronize()->::chat::MyInfoSynchronize::MergeFrom(from._internal_synchronize());
     }
@@ -4715,9 +4762,12 @@ void ClientMessage::MergeFrom(const ClientMessage& from) {
       _internal_mutable_directmessage()->::chat::DirectMessageRequest::MergeFrom(from._internal_directmessage());
     }
     if (cached_has_bits & 0x00000020u) {
-      option_ = from.option_;
+      _internal_mutable_acknowledge()->::chat::MyInfoAcknowledge::MergeFrom(from._internal_acknowledge());
     }
     if (cached_has_bits & 0x00000040u) {
+      option_ = from.option_;
+    }
+    if (cached_has_bits & 0x00000080u) {
       userid_ = from.userid_;
     }
     _has_bits_[0] |= cached_has_bits;
@@ -4739,7 +4789,7 @@ void ClientMessage::CopyFrom(const ClientMessage& from) {
 }
 
 bool ClientMessage::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000020) != 0x00000020) return false;
+  if ((_has_bits_[0] & 0x00000040) != 0x00000040) return false;
   if (_internal_has_synchronize()) {
     if (!synchronize_->IsInitialized()) return false;
   }
@@ -4751,6 +4801,9 @@ bool ClientMessage::IsInitialized() const {
   }
   if (_internal_has_directmessage()) {
     if (!directmessage_->IsInitialized()) return false;
+  }
+  if (_internal_has_acknowledge()) {
+    if (!acknowledge_->IsInitialized()) return false;
   }
   return true;
 }
@@ -4764,6 +4817,7 @@ void ClientMessage::InternalSwap(ClientMessage* other) {
   swap(changestatus_, other->changestatus_);
   swap(broadcast_, other->broadcast_);
   swap(directmessage_, other->directmessage_);
+  swap(acknowledge_, other->acknowledge_);
   swap(option_, other->option_);
   swap(userid_, other->userid_);
 }

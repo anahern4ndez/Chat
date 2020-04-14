@@ -73,18 +73,16 @@ int main(int argc, char *argv[])
     // So, the original socket file descriptor can continue to be used 
     // for accepting new connections while the new socker file descriptor is used for
     // communicating with the connected client.
-    newsockfd = accept(sockfd, 
-                (struct sockaddr *) &cli_addr, &clilen);
+    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
     if (newsockfd < 0) 
         error("ERROR on accept");
 
     printf("server: got connection from %s port %d\n",
         inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
 
-
-    // This send() function sends the 13 bytes of the string to the new socket
-    send(newsockfd, "Hello, world!\n", 13, 0);
-
+    /*
+                THREE WAY HANDSHAKE
+    */
     bzero(buffer,256);
 
     n = read(newsockfd,buffer,255);
@@ -93,6 +91,7 @@ int main(int argc, char *argv[])
     // crear un mensaje de server para el handshake 
 
     ClientMessage clientMessage;
+    ClientMessage clientAcknowledge;
     ServerMessage serverMessage;
 
         // recepcion y parse de mensaje del cliente
@@ -101,6 +100,35 @@ int main(int argc, char *argv[])
     std::cout << "Option: " << clientMessage.option() << std::endl;
     std::cout << "Username: " << clientMessage.synchronize().username() << std::endl;
     std::cout << "ip: " << clientMessage.synchronize().ip() << std::endl;
+
+        // envio de response 
+    //response build 
+    MyInfoResponse * serverResponse(new MyInfoResponse); 
+    serverResponse->set_userid(1);
+
+    serverMessage.set_option(4);
+    serverMessage.set_allocated_myinforesponse(serverResponse);
+
+    std::string binary;
+    serverMessage.SerializeToString(&binary);
+    
+    // envio de mensaje de cliente a server 
+    char cstr[binary.size() + 1];
+    strcpy(cstr, binary.c_str());
+
+    // send to socket
+    send(newsockfd, cstr, strlen(cstr), 0 );
+
+    // listen for acknowledge 
+    bzero(buffer,256);
+
+    n = read(newsockfd,buffer,255);
+    if (n < 0) error("ERROR reading from socket");
+
+    clientAcknowledge.ParseFromString(buffer);
+    std::cout << "Client acknowledge: " << std::endl;
+    std::cout << "Option: " << clientAcknowledge.option() << std::endl;
+    std::cout << "User ID: " << clientAcknowledge.acknowledge().userid() << std::endl;
 
     close(newsockfd);
     close(sockfd);

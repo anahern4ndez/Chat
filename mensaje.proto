@@ -134,6 +134,8 @@ message ClientMessage {
   optional BroadcastRequest broadcast = 6;
 
   optional DirectMessageRequest directMessage = 7;
+  
+  optional MyInfoAcknowledge acknowledge = 8;
 }
 
 // SERVER MESSAGE OPTIONS

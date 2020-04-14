@@ -31,7 +31,6 @@ int main()
     // Se serializa el message a string
     string binary;
     clientMessage.SerializeToString(&binary);
-
     
     // envio de mensaje de cliente a server 
     char cstr[binary.size() + 1];

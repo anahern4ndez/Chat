@@ -7,8 +7,8 @@
 using namespace std;
 using namespace chat;
 
-#define SEND_SOCKET 9999 // send socket
-#define RECEIVE_SOCKET 9999 // receive socket
+#define SOCKET 9999 // send socket
+// #define RECEIVE_SOCKET 9999 // receive socket
 
 int main()
 {
@@ -37,18 +37,25 @@ int main()
     char cstr[binary.size() + 1];
     strcpy(cstr, binary.c_str());
 
-    send(SEND_SOCKET, cstr, strlen(cstr), 0 );
+    // send to socker
+    send(SOCKET, cstr, strlen(cstr), 0 );
 
 
     //          -------     SERVER
-    // recepcion de server de mensaje
+    // // recepcion de server de mensaje
+    // char *messagebuf = (char*)malloc(sizeof(char) * 30);
+    // read(RECEIVE_SOCKET, messagebuf, 8192);
+
     char *messagebuf = (char*)malloc(sizeof(char) * 30);
-    read(RECEIVE_SOCKET, messagebuf, 8192);
+    recv(SOCKET, messagebuf, 8192, 0);
+    string message(messagebuf);
+
+    cout << message << " fdsafdsa " << endl;
     // Se deserealiza el string a un objeto Mensaje
     ClientMessage receivedMessage;
     // char *test = static_cast<char*>(messagebuf);
-    receivedMessage.ParseFromString(binary); //no debe ser binary, debe ser messagebuf
-    // receivedMessage.ParseFromString(messagebuf);
+    // receivedMessage.ParseFromString(binary); //no debe ser binary, debe ser messagebuf
+    receivedMessage.ParseFromString(message);
 
 
     // Print de mensaje recibido 

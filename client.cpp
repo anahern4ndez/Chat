@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
     ServerMessage serverResponseMsg;
     serverResponseMsg.ParseFromString(buffer);
     cout << "Server response: " << endl;
-    std::cout << "Option: " << serverResponseMsg.option() << std::endl;
-    std::cout << "User Id: " << serverResponseMsg.myinforesponse().userid() << std::endl;
+    cout << "Option: " << serverResponseMsg.option() << endl;
+    cout << "User Id: " << serverResponseMsg.myinforesponse().userid() << endl;
     
     // client response (acknowledge)
     MyInfoAcknowledge * infoAck(new MyInfoAcknowledge);

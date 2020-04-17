@@ -6,14 +6,118 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <pthread.h>
 #include "mensaje.pb.h"
 using namespace std;
 using namespace chat;
+
+// opciones de mensaje para el server
+enum ServerOpt {
+    BROADCAST_S = 1,
+    MESSAGE = 2,
+    ERROR = 3,
+    RESPONSE = 4,
+    C_USERS_RESPONSE = 5,
+    CHANGE_STATUS = 6,
+    BROADCAST_RESPONSE = 7,
+    DM_RESPONSE = 8
+};
 
 void error(const char *msg)
 {
     perror(msg);
     exit(0);
+}
+
+void *listen_thread(void *params){
+    int socketFd = *(int *)params;
+    char buffer[1024];
+    string msgSerialized;
+    ClientMessage clientMessage;
+    ClientMessage clientAcknowledge;
+    ServerMessage serverMessage;
+
+    printf("Entro al thread\n");
+
+    while (1)
+    {
+
+        recv(socketFd, buffer, 1024, 0);
+        // recepcion y parse de mensaje del server
+        serverMessage.ParseFromString(buffer);
+
+        if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
+        {
+            cout << "UserId: " << serverMessage.broadcast().userid() << endl;
+            cout << "Mensaje: " << serverMessage.broadcast().message() << endl;
+
+        } else {
+
+            cout << "Option: " << serverMessage.option() << endl;
+
+        }
+
+        serverMessage.Clear();
+    }
+    close(socketFd);
+    pthread_exit(0);
+}
+
+void broadCast(char buffer[], int sockfd){
+    printf("ENTRO");
+    string message = "Hola mundo";
+    string binary;
+    ClientMessage clientMessage;
+    ServerMessage serverResponseMsg;
+
+    BroadcastRequest *brdRequest = new BroadcastRequest();
+
+    clientMessage.set_option(4);
+    brdRequest->set_message(message);
+    clientMessage.set_allocated_broadcast(brdRequest);
+    clientMessage.SerializeToString(&binary);
+
+    // envio de mensaje de cliente a server 
+    char cstr[binary.size() + 1];
+    strcpy(cstr, binary.c_str());
+
+    // send to socket
+    send(sockfd, cstr, strlen(cstr), 0 );
+
+    printf("en teoria llega al send");
+
+    read(sockfd, buffer, 8192);
+    serverResponseMsg.ParseFromString(buffer);
+    cout << "Server response: " << endl;
+    cout << "Option: " << serverResponseMsg.option() << endl;
+    cout << "Message:" << serverResponseMsg.broadcastresponse().messagestatus() << endl;
+    if(serverResponseMsg.option() == 3 && serverResponseMsg.has_error()){
+        cout << "Server responde with an error" << serverResponseMsg.error().errormessage() << endl;
+    }
+
+}
+
+void *options_thread(void *args)
+{
+    int option;
+    char buffer[1024];
+    int socketFd = *(int *)args;
+
+    while (1)
+    {
+        printf("1. Synch \n");
+        printf("4. Broadcast\n");
+        cin >> option;
+        if(option == 4){
+            broadCast(buffer, socketFd);
+        }else if(option == 1){
+            
+        } else {
+            break;
+        }
+        
+    }
+    
 }
 
 void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *argv[]){
@@ -67,39 +171,6 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
     strcpy(cstr2, binarya.c_str());
 
     send(sockfd, cstr2, strlen(cstr2), 0);
-
-}
-
-void broadCast(char buffer[], int sockfd){
-    printf("ENTRO");
-    string message = "Hola mundo";
-    string binary;
-    ClientMessage clientMessage;
-    ServerMessage serverResponseMsg;
-
-    BroadcastRequest *brdRequest = new BroadcastRequest();
-
-    clientMessage.set_option(4);
-    brdRequest->set_message(message);
-    clientMessage.set_allocated_broadcast(brdRequest);
-    clientMessage.SerializeToString(&binary);
-
-    // envio de mensaje de cliente a server 
-    char cstr[binary.size() + 1];
-    strcpy(cstr, binary.c_str());
-
-    // send to socket
-    send(sockfd, cstr, strlen(cstr), 0 );
-
-    printf("en teoria llega al send");
-
-    read(sockfd, buffer, 8192);
-    serverResponseMsg.ParseFromString(buffer);
-
-    if(serverResponseMsg.option() == 3 && serverResponseMsg.has_error()){
-        cout << "Server responde with an error" << serverResponseMsg.error().errormessage() << endl;
-    }
-
 }
 
 int main(int argc, char *argv[])
@@ -109,6 +180,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     int option;
+
 
     char buffer[8192];
     
@@ -137,24 +209,23 @@ int main(int argc, char *argv[])
 
     cout << "connect" << endl;
 
-    do
-    {
-        printf("1. Synch \n");
-        printf("4. Broadcast\n");
-        cin >> option;
-        switch (option)
-        {
-            case 1: 
-                synchUser(serv_addr, sockfd, buffer, argv);
-                break;
-            case 4:
-                broadCast(buffer, sockfd);
-                break;
+    synchUser(serv_addr, sockfd, buffer, argv);
 
-        }
-    } while (option != 7);
-   
+    pthread_t listen_client;
+    pthread_t options_client;
 
+    if (pthread_create(&listen_client, NULL, listen_thread, (void *)&sockfd) 
+            || pthread_create(&options_client, NULL, options_thread, (void *)&sockfd))
+            {
+                cout << "Error: unable to create threads." << endl;
+                exit(-1);
+            }
+
+            pthread_join (listen_client, NULL);
+            pthread_join (options_client, NULL);
+    
+
+    
     close(sockfd);
     return 0;
 }

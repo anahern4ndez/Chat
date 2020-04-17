@@ -102,7 +102,7 @@ message DirectMessageResponse {
 // Received from SERVER (Only recipient)
 message DirectMessage {
   required string message = 1;
-  required string userId = 2;
+  required int32 userId = 2;
 }
 // -----------------------------------
 
@@ -120,6 +120,7 @@ message ErrorResponse {
 // option 3: changeStatus
 // option 4: broadcast
 // option 5: directMessage
+// option 6: acknowledge
 message ClientMessage {
   required int32 option = 1;
 
@@ -134,7 +135,7 @@ message ClientMessage {
   optional BroadcastRequest broadcast = 6;
 
   optional DirectMessageRequest directMessage = 7;
-  
+
   optional MyInfoAcknowledge acknowledge = 8;
 }
 

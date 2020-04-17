@@ -20,30 +20,6 @@ using namespace chat;
 #define MAX_CONNECTIONS 20 //establece la cantidad maxima de conexiones que el server puede tener simultaneamente
 #define MAX_BUFFER 8192 //cantidad maxima de caracteres en un mensaje
 
-/*
-    Se usará una queue para monitorear a los clientes. Contiene mutex locks para cuando 
-    se agrega, modifica o elimina a un cliente de a lista, y variables condición para cuando esté llena o vacía. 
-*/
-typedef struct {
-    char *buffer[MAX_BUFFER];
-    int head, tail;
-    int full, empty;
-    pthread_mutex_t *mutex;
-    pthread_cond_t *notFull, *notEmpty;
-} message_queue;
-
-/*
-    En este struct se guardan las queues y threads necesarios para el manejo 
-*/
-typedef struct {
-    int socketFd; // file descriptor del main socket donde el server esta escuchando
-    int connected_clients[MAX_CONNECTIONS]; //lista donde se guardan los FDs de los sockets de clientes conectados
-    pthread_mutex_t client_queue_mutex; //lock para poder modificar la lista de clientes conectados
-    int client_num; //cantidad de clientes conectados
-    message_queue *broadcast_messages; // queue se usara para cuando se quiera hacer un broadcast
-    fd_set all_sockets; // pool de socketFds aceptados
-} chat_data;
-
 // opciones de mensaje para el cliente
 enum ClientOpt {
     SYNC = 1,
@@ -63,6 +39,29 @@ enum ServerOpt {
     BOADCAST_RESPONSE = 7,
     DM_RESPONSE = 8
 };
+/*
+    Estructura de queues para el envio de mensajes. 
+*/
+typedef struct {
+    char *buffer[MAX_BUFFER];
+    int head, tail;
+    int full, empty;
+    pthread_mutex_t *mutex;
+    pthread_cond_t *notFull, *notEmpty;
+} message_queue;
+
+/*
+    En este struct se guardan las queues y threads necesarios para el manejo de clientes
+*/
+typedef struct {
+    int socketFd; // file descriptor del main socket donde el server esta escuchando
+    int connected_clients[MAX_CONNECTIONS]; //lista donde se guardan los FDs de los sockets de clientes conectados
+    pthread_mutex_t client_queue_mutex; //lock para poder modificar la lista de clientes conectados
+    int client_num; //cantidad de clientes conectados
+    message_queue *broadcast_messages; // queue se usara para cuando se quiera hacer un broadcast
+    fd_set all_sockets; // pool de socketFds aceptados
+} chat_data;
+
 
  /*
     Struct que contiene toda la información relevante del cliente. 
@@ -71,6 +70,7 @@ struct Client
 {
     int socketFd;
     std::string username;
+    int userid;
     char ip_address[INET_ADDRSTRLEN];
     std::string status;
     message_queue *received_messages;
@@ -78,7 +78,7 @@ struct Client
 };
 
 std::unordered_map<std::string, Client *> clients;
-
+chat_data data; // data global para todos los threads
 
 //se nombrarán las funciones aquí pero las implementaciones están de último
 void bind_socket(struct sockaddr_in serverAddr, int socketFd, long port);
@@ -86,6 +86,7 @@ void *client_thread(void *params);
 void ErrorToClient(int socketFd, std::string errorMsg);
 message_queue* init_queue(void);
 void init_chat(int sockfd);
+void new_client(chat_data *chat, int new_socket);
 
 void error(const char *msg)
 {
@@ -93,7 +94,6 @@ void error(const char *msg)
     exit(1);
 }
 
-chat_data data; // data global para todos los threads
 
 int main(int argc, char *argv[])
 {
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
         newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
         if (newsockfd < 0)
             error("ERROR en accept()");
-        //new_client();
+        new_client(&data, newsockfd);
     }
 
     pthread_mutex_destroy(&data.client_queue_mutex);
@@ -183,7 +183,7 @@ void bind_socket(struct sockaddr_in serverAddr, int socketFd, long port){
     }
 }
 
-void new_client(chat_data *chat, int new_socket, std::string username, char *ipAddress){
+void new_client(chat_data *chat, int new_socket){
     fprintf(stderr, "Server accepted new client. Socket: %d\n", new_socket);
     pthread_mutex_lock(&chat->client_queue_mutex);
     if(chat->client_num < MAX_CONNECTIONS){
@@ -197,26 +197,17 @@ void new_client(chat_data *chat, int new_socket, std::string username, char *ipA
         }
         FD_SET(new_socket, &(chat->all_sockets));
         chat->client_num++;
-        struct Client newClient;
-        strcpy(newClient.ip_address,ipAddress);
-        newClient.socketFd = new_socket;
-        newClient.username = username;
-        newClient.received_messages = init_queue();
-        newClient.sent_messages = init_queue();
-        //agregar nuevo cliente al map de clientes
-        std::pair<std::string, Client*> nclient (username, &newClient);
-        clients.insert(nclient);
         //iniciar thread
         pthread_t thread_cli;
-        pthread_create(&thread_cli, NULL, client_thread, (void *)&newClient);
+        pthread_create(&thread_cli, NULL, client_thread, (void *)&new_socket);
     }
     pthread_mutex_unlock(&chat->client_queue_mutex);
 }
 
 void *client_thread(void *params)
 {
-    struct Client thisClient = *(Client *)params;
-    int socketFd = thisClient.socketFd;
+    int socketFd = *(int *)params;
+    struct Client thisClient;
     char buffer[MAX_BUFFER];
     std::string msgSerialized;
     ClientMessage clientMessage;
@@ -226,7 +217,11 @@ void *client_thread(void *params)
     std::cout << "Thread for client with socket: " << socketFd << std::endl;
 
     while (1)
-    {
+    {   
+        memset(&buffer[0], 0, sizeof(buffer)); //clear buffer
+        clientMessage.Clear(); // clear clientMessage
+        serverMessage.Clear();
+        msgSerialized[0] = 0; //clear serialized variable
 
         recv(socketFd, buffer, MAX_BUFFER, 0);
         // recepcion y parse de mensaje del cliente
@@ -235,26 +230,25 @@ void *client_thread(void *params)
         // Un if para cada opcion del cliente
         if (clientMessage.option() == ClientOpt::SYNC)
         {
-            if (!clientMessage.has_synchronize())
-            {
-                ErrorToClient(socketFd, "No Synchronize information");
-                break;
-            }
-
             /*
                 THREE WAY HANDSHAKE
             */            
-            std::cout << "Received information: " << std::endl;
-            std::cout << "Option: " << clientMessage.option() << std::endl;
-            std::cout << "Username: " << clientMessage.synchronize().username() << std::endl;
-            std::cout << "ip: " << clientMessage.synchronize().ip() << std::endl;
+            if (!clientMessage.has_synchronize())
+            {
+                ErrorToClient(socketFd, "Failed to Synchronize");
+                break;
+            }
+            
+            thisClient.username = clientMessage.synchronize().username();
+            if(clientMessage.synchronize().has_ip())
+                strcpy(thisClient.ip_address, clientMessage.synchronize().ip().c_str());
                 // envio de response 
             //response build 
             MyInfoResponse * serverResponse(new MyInfoResponse); 
             serverResponse->set_userid(1);
 
             serverMessage.Clear();
-            serverMessage.set_option(4);
+            serverMessage.set_option(ServerOpt::RESPONSE);
             serverMessage.set_allocated_myinforesponse(serverResponse);
 
             serverMessage.SerializeToString(&msgSerialized);
@@ -262,21 +256,22 @@ void *client_thread(void *params)
             // enviar de mensaje de cliente a server
             strcpy(buffer, msgSerialized.c_str());
             send(socketFd, buffer, msgSerialized.size() + 1, 0);
-            std::cout << "MyInfoResponse send to socket: "<< socketFd << std::endl;
 
             recv(socketFd, buffer, MAX_BUFFER, 0);
 
             clientAcknowledge.ParseFromString(buffer);
-            std::cout << "Client acknowledge: " << std::endl;
-            std::cout << "Option: " << clientAcknowledge.option() << std::endl;
-            std::cout << "User ID: " << clientAcknowledge.acknowledge().userid() << std::endl;
-
-
-            strcpy(thisClient.ip_address, clientMessage.synchronize().ip().c_str());
-            thisClient.username = clientMessage.synchronize().username();
+            if(!clientMessage.has_acknowledge()){
+                ErrorToClient(socketFd, "Failed to Acknowledge");
+                break;
+            }
             thisClient.socketFd = socketFd;
-            clients[thisClient.username] = &thisClient;
-            std::cout << "User connected"<< thisClient.username<< std::endl;
+            thisClient.received_messages = init_queue();
+            thisClient.sent_messages = init_queue();
+            thisClient.userid = clientMessage.userid();
+            //agregar nuevo cliente al map de clientes
+            std::pair<std::string, Client*> nclient (clientMessage.synchronize().username(), &thisClient);
+            clients.insert(nclient);
+            std::cout << "User "<< thisClient.username<< " connected."<<std::endl;
         } 
         else if (clientMessage.option() == ClientOpt::BROADCAST_C){
 
@@ -285,11 +280,52 @@ void *client_thread(void *params)
 
         }
         else if (clientMessage.option() == ClientOpt::DM){
+            if(!clientMessage.has_directmessage()){
+                ErrorToClient(socketFd, "Error in DM");
+                break;
+            }
+            if(!clientMessage.directmessage().has_username() && !clientMessage.directmessage().userid()){
+                ErrorToClient(socketFd, "You must specify recipient's ID or username.");
+                break;
+            }
+            // const char *message_to_send = clientMessage.directmessage().message().c_str();
             std::string message_to_send = clientMessage.directmessage().message();
-
+            std::string recipient_username = clientMessage.directmessage().username();
+            std::unordered_map<std::string, Client *>::const_iterator recipient = clients.find(recipient_username);
+            if (recipient == clients.end()){
+                ErrorToClient(socketFd, "Username not found.");
+                break;
+            }
+            // intento de enviar mensaje a recipient
+            DirectMessage * dm(new DirectMessage);
+            dm->set_message(message_to_send);
+            dm->set_userid((recipient->second)->userid);
+            int recipient_fd = (recipient->second)->socketFd;
+            ServerMessage to_recipient;
+            to_recipient.set_option(ServerOpt::MESSAGE);
+            to_recipient.set_allocated_message(dm);
+            // Se serializa el message a string
+            to_recipient.SerializeToString(&msgSerialized);
+            char cstr[msgSerialized.size() + 1];
+            strcpy(cstr, msgSerialized.c_str());   
+            int success = send(recipient_fd, cstr, strlen(cstr), 0);
+            if(success < 0){
+                ErrorToClient(socketFd, "Failed to send DM.");
+                break;
+            }
+            memset(&cstr[0], 0, sizeof(cstr)); //clear buffer
+            msgSerialized[0] = 0; //clear serialized variable
+            // si es exitoso, mandar aviso a emisor 
+            DirectMessageResponse * dm_response(new DirectMessageResponse);
+            dm_response->set_messagestatus("MESSAGE SENT");
+            ServerMessage to_sender;
+            to_sender.set_option(ServerOpt::DM_RESPONSE);
+            to_sender.set_allocated_directmessageresponse(dm_response);
+            to_sender.SerializeToString(&msgSerialized);
+            strcpy(cstr, msgSerialized.c_str());   
+            send(socketFd, cstr, strlen(cstr), 0);
         }
         std::cout << "--- Users:  " << clients.size() << std::endl;
-        clientMessage.Clear();
         
     }
 
@@ -299,6 +335,10 @@ void *client_thread(void *params)
     std::cout << "Closing socket"<< std::endl;
     pthread_exit(0);
 }
+
+// Client* find_by_id(int id){
+
+// }
 /*
     Metodo del thread handler para escuchar mensajes 
 */

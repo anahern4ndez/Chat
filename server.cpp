@@ -17,12 +17,8 @@
 using namespace chat;
 
 #define QUEUE_MAX 10 // establece el numero maximo de conexiones en cola 
+#define MAX_CONNECTIONS 20 //establece la cantidad maxima de conexiones que el server puede tener simultaneamente
 #define MAX_BUFFER 8192 //cantidad maxima de caracteres en un mensaje
-
-//se nombrarán las funciones aquí pero las implementaciones están de último
-void bind_socket(struct sockaddr_in serverAddr, int socketFd, long port);
-void *client_thread(void *params);
-void ErrorToClient(int socketFd, std::string errorMsg);
 
 /*
     Se usará una queue para monitorear a los clientes. Contiene mutex locks para cuando 
@@ -34,15 +30,18 @@ typedef struct {
     int full, empty;
     pthread_mutex_t *mutex;
     pthread_cond_t *notFull, *notEmpty;
-} client_queue;
+} message_queue;
 
 /*
     En este struct se guardan las queues y threads necesarios para el manejo 
 */
 typedef struct {
-    int connected_clients[MAX_BUFFER]; //lista donde se guardan los FDs de los sockets de clientes conectados
-    pthread_mutex_t *client_queue_mutex; //lock para poder modificar la lista de clientes conectados
-    client_queue *queue;
+    int socketFd; // file descriptor del main socket donde el server esta escuchando
+    int connected_clients[MAX_CONNECTIONS]; //lista donde se guardan los FDs de los sockets de clientes conectados
+    pthread_mutex_t client_queue_mutex; //lock para poder modificar la lista de clientes conectados
+    int client_num; //cantidad de clientes conectados
+    message_queue *broadcast_messages; // queue se usara para cuando se quiera hacer un broadcast
+    fd_set all_sockets; // pool de socketFds aceptados
 } chat_data;
 
 // opciones de mensaje para el cliente
@@ -74,10 +73,19 @@ struct Client
     std::string username;
     char ip_address[INET_ADDRSTRLEN];
     std::string status;
+    message_queue *received_messages;
+    message_queue *sent_messages;
 };
 
 std::unordered_map<std::string, Client *> clients;
 
+
+//se nombrarán las funciones aquí pero las implementaciones están de último
+void bind_socket(struct sockaddr_in serverAddr, int socketFd, long port);
+void *client_thread(void *params);
+void ErrorToClient(int socketFd, std::string errorMsg);
+message_queue* init_queue(void);
+void init_chat(int sockfd);
 
 void error(const char *msg)
 {
@@ -85,14 +93,17 @@ void error(const char *msg)
     exit(1);
 }
 
+chat_data data; // data global para todos los threads
+
 int main(int argc, char *argv[])
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
-    int sockfd, newsockfd;
+    int sockfd, newsockfd, client_num;
     socklen_t clilen;
     sockaddr_in serv_addr, cli_addr;
     long port = 9999; // el puerto default es 9999
     char cli_addr_addr[INET_ADDRSTRLEN];
+    pthread_t messagesThread;
 
     if (argc == 2)
     {
@@ -110,6 +121,16 @@ int main(int argc, char *argv[])
     // clear address structure
     bzero((char *) &serv_addr, sizeof(serv_addr));
     bind_socket(serv_addr, sockfd, port);
+    // inicializar todas las variables del struct de chat
+    data.socketFd = sockfd;
+    data.broadcast_messages = init_queue();
+    data.client_num = 0;
+    FD_ZERO(&(data.all_sockets));
+    FD_SET(sockfd, &(data.all_sockets));
+    pthread_mutex_init(&data.client_queue_mutex, NULL);
+    // // Se creara un nuevo thread para estar al tanto de recibir y mandar mensajes
+    // // el thread actual (padre) quedara para escuchar nuevas conexiones 
+    // pthread_create(&messagesThread, NULL, message_thread, (void *)&data)
     // El socket actual queda abierto para nuevas conexiones, hasta que se les haga accept() quedan en cola, 
     // el número máximo de elementos en cola es QUEUE_MAX.
     if (listen(sockfd, QUEUE_MAX) == -1)
@@ -127,10 +148,10 @@ int main(int argc, char *argv[])
         newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
         if (newsockfd < 0)
             error("ERROR en accept()");
-        pthread_t thread_cli;
-        pthread_create(&thread_cli, NULL, client_thread, (void *)&newsockfd);
+        //new_client();
     }
 
+    pthread_mutex_destroy(&data.client_queue_mutex);
     google::protobuf::ShutdownProtobufLibrary();
     return 0;
 }
@@ -149,16 +170,58 @@ void ErrorToClient(int socketFd, std::string errorMsg)
     send(socketFd, buffer, sizeof buffer, 0);
 }
 
+
+void bind_socket(struct sockaddr_in serverAddr, int socketFd, long port){
+    serverAddr.sin_family = AF_INET;  
+    serverAddr.sin_addr.s_addr = INADDR_ANY;  
+    serverAddr.sin_port = htons(port);
+    memset(serverAddr.sin_zero, 0, sizeof serverAddr.sin_zero);
+    // This bind() call will bind  the socket to the current IP address on port
+    if (bind(socketFd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
+            close(socketFd);
+            error("ERROR on binding\n");
+    }
+}
+
+void new_client(chat_data *chat, int new_socket, std::string username, char *ipAddress){
+    fprintf(stderr, "Server accepted new client. Socket: %d\n", new_socket);
+    pthread_mutex_lock(&chat->client_queue_mutex);
+    if(chat->client_num < MAX_CONNECTIONS){
+        //revisa en toda la lista de sockets y, si no existe el que quiere setear, lo setea
+        for(int i =0; i < MAX_CONNECTIONS; i++){
+            if(!FD_ISSET(chat->connected_clients[i], &(chat->all_sockets)))
+            {
+                chat->connected_clients[i] = new_socket;
+                i = MAX_BUFFER; //break
+            }
+        }
+        FD_SET(new_socket, &(chat->all_sockets));
+        chat->client_num++;
+        struct Client newClient;
+        strcpy(newClient.ip_address,ipAddress);
+        newClient.socketFd = new_socket;
+        newClient.username = username;
+        newClient.received_messages = init_queue();
+        newClient.sent_messages = init_queue();
+        //agregar nuevo cliente al map de clientes
+        std::pair<std::string, Client*> nclient (username, &newClient);
+        clients.insert(nclient);
+        //iniciar thread
+        pthread_t thread_cli;
+        pthread_create(&thread_cli, NULL, client_thread, (void *)&newClient);
+    }
+    pthread_mutex_unlock(&chat->client_queue_mutex);
+}
+
 void *client_thread(void *params)
 {
-    struct Client thisClient;
-    int socketFd = *(int *)params;
+    struct Client thisClient = *(Client *)params;
+    int socketFd = thisClient.socketFd;
     char buffer[MAX_BUFFER];
     std::string msgSerialized;
     ClientMessage clientMessage;
     ClientMessage clientAcknowledge;
     ServerMessage serverMessage;
-
 
     std::cout << "Thread for client with socket: " << socketFd << std::endl;
 
@@ -172,8 +235,6 @@ void *client_thread(void *params)
         // Un if para cada opcion del cliente
         if (clientMessage.option() == ClientOpt::SYNC)
         {
-
-            printf("Siempre esta entrando aqui \n");
             if (!clientMessage.has_synchronize())
             {
                 ErrorToClient(socketFd, "No Synchronize information");
@@ -216,18 +277,19 @@ void *client_thread(void *params)
             thisClient.socketFd = socketFd;
             clients[thisClient.username] = &thisClient;
             std::cout << "User connected"<< thisClient.username<< std::endl;
-        } else if (clientMessage.option() == ClientOpt::BROADCAST_C){
+        } 
+        else if (clientMessage.option() == ClientOpt::BROADCAST_C){
 
             printf("ENTRO \n");
             
 
         }
+        else if (clientMessage.option() == ClientOpt::DM){
+            std::string message_to_send = clientMessage.directmessage().message();
 
-
+        }
         std::cout << "--- Users:  " << clients.size() << std::endl;
         clientMessage.Clear();
-
-
         
     }
 
@@ -237,15 +299,22 @@ void *client_thread(void *params)
     std::cout << "Closing socket"<< std::endl;
     pthread_exit(0);
 }
+/*
+    Metodo del thread handler para escuchar mensajes 
+*/
 
-void bind_socket(struct sockaddr_in serverAddr, int socketFd, long port){
-    serverAddr.sin_family = AF_INET;  
-    serverAddr.sin_addr.s_addr = INADDR_ANY;  
-    serverAddr.sin_port = htons(port);
-    memset(serverAddr.sin_zero, 0, sizeof serverAddr.sin_zero);
-    // This bind() call will bind  the socket to the current IP address on port
-    if (bind(socketFd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
-            close(socketFd);
-            error("ERROR on binding\n");
-    }
+// void *message_thread(void *params){
+
+// }
+message_queue* init_queue(void){
+    message_queue *queue = (message_queue *)malloc(sizeof(message_queue));
+    queue->empty = 1;
+    queue->full = 0;
+    queue->head = 0;
+    queue->tail = 0;
+    queue->mutex = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(queue->mutex, NULL);
+    queue->notFull = (pthread_cond_t *) malloc(sizeof(pthread_cond_t));
+    queue->notEmpty = (pthread_cond_t *) malloc(sizeof(pthread_cond_t));
+    return queue;
 }

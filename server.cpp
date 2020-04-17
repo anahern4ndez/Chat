@@ -164,6 +164,7 @@ void *client_thread(void *params)
 
     while (1)
     {
+
         recv(socketFd, buffer, MAX_BUFFER, 0);
         // recepcion y parse de mensaje del cliente
         clientMessage.ParseFromString(buffer);
@@ -171,6 +172,8 @@ void *client_thread(void *params)
         // Un if para cada opcion del cliente
         if (clientMessage.option() == ClientOpt::SYNC)
         {
+
+            printf("Siempre esta entrando aqui \n");
             if (!clientMessage.has_synchronize())
             {
                 ErrorToClient(socketFd, "No Synchronize information");
@@ -212,10 +215,18 @@ void *client_thread(void *params)
             thisClient.username = clientMessage.synchronize().username();
             thisClient.socketFd = socketFd;
             clients[thisClient.username] = &thisClient;
-            std::cout << "User connected: "<< thisClient.username<< std::endl;
+            std::cout << "User connected"<< thisClient.username<< std::endl;
+        } else if (clientMessage.option() == ClientOpt::BROADCAST_C){
+
+            printf("ENTRO \n");
+            
+
         }
 
+
         std::cout << "--- Users:  " << clients.size() << std::endl;
+        clientMessage.Clear();
+
 
         
     }

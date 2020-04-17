@@ -586,7 +586,7 @@ const char descriptor_table_protodef_mensaje_2eproto[] PROTOBUF_SECTION_VARIABLE
   "est\022\017\n\007message\030\001 \002(\t\022\016\n\006userId\030\002 \001(\005\022\020\n\010"
   "username\030\003 \001(\t\".\n\025DirectMessageResponse\022"
   "\025\n\rmessageStatus\030\001 \002(\t\"0\n\rDirectMessage\022"
-  "\017\n\007message\030\001 \002(\t\022\016\n\006userId\030\002 \002(\t\"%\n\rErro"
+  "\017\n\007message\030\001 \002(\t\022\016\n\006userId\030\002 \002(\005\"%\n\rErro"
   "rResponse\022\024\n\014errorMessage\030\001 \002(\t\"\316\002\n\rClie"
   "ntMessage\022\016\n\006option\030\001 \002(\005\022\016\n\006userId\030\002 \001("
   "\005\022,\n\013synchronize\030\003 \001(\0132\027.chat.MyInfoSync"
@@ -3821,17 +3821,14 @@ DirectMessage::DirectMessage(const DirectMessage& from)
   if (from._internal_has_message()) {
     message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
   }
-  userid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  if (from._internal_has_userid()) {
-    userid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.userid_);
-  }
+  userid_ = from.userid_;
   // @@protoc_insertion_point(copy_constructor:chat.DirectMessage)
 }
 
 void DirectMessage::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DirectMessage_mensaje_2eproto.base);
   message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  userid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  userid_ = 0;
 }
 
 DirectMessage::~DirectMessage() {
@@ -3841,7 +3838,6 @@ DirectMessage::~DirectMessage() {
 
 void DirectMessage::SharedDtor() {
   message_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  userid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void DirectMessage::SetCachedSize(int size) const {
@@ -3860,14 +3856,10 @@ void DirectMessage::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x00000003u) {
-    if (cached_has_bits & 0x00000001u) {
-      message_.ClearNonDefaultToEmptyNoArena();
-    }
-    if (cached_has_bits & 0x00000002u) {
-      userid_.ClearNonDefaultToEmptyNoArena();
-    }
+  if (cached_has_bits & 0x00000001u) {
+    message_.ClearNonDefaultToEmptyNoArena();
   }
+  userid_ = 0;
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
@@ -3891,14 +3883,11 @@ const char* DirectMessage::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
-      // required string userId = 2;
+      // required int32 userId = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
-          auto str = _internal_mutable_userid();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "chat.DirectMessage.userId");
-          #endif  // !NDEBUG
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+          _Internal::set_has_userid(&has_bits);
+          userid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -3940,14 +3929,10 @@ failure:
         1, this->_internal_message(), target);
   }
 
-  // required string userId = 2;
+  // required int32 userId = 2;
   if (cached_has_bits & 0x00000002u) {
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_userid().data(), static_cast<int>(this->_internal_userid().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "chat.DirectMessage.userId");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_userid(), target);
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(2, this->_internal_userid(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -3970,9 +3955,9 @@ size_t DirectMessage::RequiredFieldsByteSizeFallback() const {
   }
 
   if (_internal_has_userid()) {
-    // required string userId = 2;
+    // required int32 userId = 2;
     total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
         this->_internal_userid());
   }
 
@@ -3988,9 +3973,9 @@ size_t DirectMessage::ByteSizeLong() const {
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_message());
 
-    // required string userId = 2;
+    // required int32 userId = 2;
     total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
         this->_internal_userid());
 
   } else {
@@ -4038,9 +4023,9 @@ void DirectMessage::MergeFrom(const DirectMessage& from) {
       message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
     }
     if (cached_has_bits & 0x00000002u) {
-      _has_bits_[0] |= 0x00000002u;
-      userid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.userid_);
+      userid_ = from.userid_;
     }
+    _has_bits_[0] |= cached_has_bits;
   }
 }
 
@@ -4069,8 +4054,7 @@ void DirectMessage::InternalSwap(DirectMessage* other) {
   swap(_has_bits_[0], other->_has_bits_[0]);
   message_.Swap(&other->message_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
-  userid_.Swap(&other->userid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  swap(userid_, other->userid_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata DirectMessage::GetMetadata() const {

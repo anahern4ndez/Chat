@@ -262,10 +262,10 @@ void *client_thread(void *params)
             recv(socketFd, buffer, MAX_BUFFER, 0);
 
             clientAcknowledge.ParseFromString(buffer);
-            if(!clientMessage.has_acknowledge()){
-                ErrorToClient(socketFd, "Failed to Acknowledge");
-                exit(0);
-            }
+            //if(!clientMessage.has_acknowledge()){
+              //  ErrorToClient(socketFd, "Failed to Acknowledge");
+               // exit(0);
+            //}
             thisClient.socketFd = socketFd;
             thisClient.received_messages = init_queue();
             thisClient.sent_messages = init_queue();
@@ -305,7 +305,7 @@ void *client_thread(void *params)
                 strcpy(cstr, msgSerialized.c_str());
                 send(socketFd, cstr, msgSerialized.size() + 1, 0);
             }
-            else {
+            /* else {
                 std::unordered_map<std::string, Client *>::const_iterator recipient;
                 std::string recipient_username;
                 if (clientMessage.connectedusers().has_username()){
@@ -338,7 +338,7 @@ void *client_thread(void *params)
                 char cstr[msgSerialized.size() + 1];
                 strcpy(cstr, msgSerialized.c_str());
                 send(socketFd, cstr, msgSerialized.size() + 1, 0);
-            }
+            } */
         }
         else if(clientMessage.option() == ClientOpt::STATUS  && can_connect){
             if (!clientMessage.has_changestatus())

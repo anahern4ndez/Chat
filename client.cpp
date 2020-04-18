@@ -39,7 +39,7 @@ void error(const char *msg)
 
 void *listen_thread(void *params){
     int socketFd = *(int *)params;
-    char buffer[1024];
+    char buffer[8192];
     string msgSerialized;
     ClientMessage clientMessage;
     ClientMessage clientAcknowledge;
@@ -49,7 +49,7 @@ void *listen_thread(void *params){
 
     while (1)
     {
-        recv(socketFd, buffer, 1024, 0);
+        recv(socketFd, buffer, 8192, 0);
         // recepcion y parse de mensaje del server
         serverMessage.ParseFromString(buffer);
 
@@ -105,7 +105,7 @@ void broadCast(char buffer[], int sockfd){
 void *options_thread(void *args)
 {
     int option;
-    char buffer[1024];
+    char buffer[8192];
     int socketFd = *(int *)args;
 
     while (1)

@@ -295,8 +295,8 @@ void *client_thread(void *params)
                 can_connect = true;
             } 
             else if(clientMessage.option() == ClientOpt::CONNECTED_USERS && can_connect){
-                clientMessage.Clear(); // clear clientMessage
-                serverMessage.Clear();
+                // clientMessage.Clear(); // clear clientMessage
+                // serverMessage.Clear();
                 if (!clientMessage.has_connectedusers())
                 {
                     ErrorToClient(socketFd, "Failed to request connected users.");
@@ -361,8 +361,8 @@ void *client_thread(void *params)
                 }
             }
             else if(clientMessage.option() == ClientOpt::STATUS  && can_connect){
-                clientMessage.Clear(); // clear clientMessage
-                serverMessage.Clear();
+                // clientMessage.Clear(); // clear clientMessage
+                // serverMessage.Clear();
                 if (!clientMessage.has_changestatus())
                 {
                     ErrorToClient(socketFd, "No Change Status Information sent by client");
@@ -390,8 +390,8 @@ void *client_thread(void *params)
             }
             else if (clientMessage.option() == ClientOpt::BROADCAST_C && can_connect){
                 
-                clientMessage.Clear(); // clear clientMessage
-                serverMessage.Clear();
+                // clientMessage.Clear(); // clear clientMessage
+                // serverMessage.Clear();
                 if (!clientMessage.has_broadcast())
                 {
                     ErrorToClient(socketFd, "No Broadcast Information");
@@ -436,8 +436,8 @@ void *client_thread(void *params)
             }
             else if (clientMessage.option() == ClientOpt::DM && can_connect){
 
-                clientMessage.Clear(); // clear clientMessage
-                serverMessage.Clear();
+                // clientMessage.Clear(); // clear clientMessage
+                // serverMessage.Clear();
                 if(!clientMessage.has_directmessage()){
                     ErrorToClient(socketFd, "Error in DM");
                     break;
@@ -482,8 +482,11 @@ void *client_thread(void *params)
                 to_sender.SerializeToString(&msgSerialized);
                 strcpy(cstr, msgSerialized.c_str());   
                 send(socketFd, cstr, strlen(cstr), 0);
-            }}
+            }
+        }
         //std::cout << "--- Users:  " << clients.size() << std::endl;
+        clientMessage.Clear(); // clear clientMessage
+        serverMessage.Clear();
         
     }
 

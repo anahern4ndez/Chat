@@ -157,6 +157,7 @@ void *options_thread(void *args)
             printf("Enter the message you want to send: ");
             cin >> message;
             broadCast(buffer, socketFd, message);
+            sleep(3);
         } else if (option == 5){
             printf("Escoge un estado\n");
             printf("Activo\n");
@@ -179,8 +180,6 @@ void *options_thread(void *args)
 
 void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *argv[]){
     int n;
-
-    std::cout << "synch client" << std::endl;
     MyInfoSynchronize *clientInfo = new MyInfoSynchronize();
     clientInfo->set_username(argv[1]);
     clientInfo->set_ip(argv[2]);
@@ -202,7 +201,6 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
 
     // listen for server response
     bzero(buffer,8192);
-    printf("Hellow\n"); 
     n = read(sockfd, buffer, 255);
     if (n < 0) 
          error("ERROR reading from socket");

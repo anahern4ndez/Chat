@@ -343,31 +343,41 @@ void *client_thread(void *params)
         else if(clientMessage.option() == ClientOpt::STATUS  && can_connect){
             if (!clientMessage.has_changestatus())
             {
-                ErrorToClient(socketFd, "Failed to change status.");
+                ErrorToClient(socketFd, "No Change Status Information sent by client");
                 break;
             }
-            std::string new_status = clientMessage.changestatus().status();
+
+            ChangeStatusRequest statusReq = clientMessage.changestatus();
+            std::cout << "Change Status Request for:" << thisClient.username << "new status: " << statusReq.status() << std::endl;
+
+
+            std::string new_status = statusReq.status();
             ChangeStatusResponse *response = new ChangeStatusResponse();
+
             response->set_userid(thisClient.userid);
             response->set_status(new_status);
+
             serverMessage.set_option(ServerOpt::CHANGE_STATUS);
             serverMessage.set_allocated_changestatusresponse(response);
             serverMessage.SerializeToString(&msgSerialized);
+
             // enviar de mensaje de cliente a server
             char cstr[msgSerialized.size() + 1];
             strcpy(cstr, msgSerialized.c_str());
             send(socketFd, cstr, msgSerialized.size() + 1, 0);
+
+            std::cout << "Server changed status for:" << thisClient.username << "sending response to client" << std::endl;
 
         }
         else if (clientMessage.option() == ClientOpt::BROADCAST_C && can_connect){
 
             if (!clientMessage.has_broadcast())
             {
-                ErrorToClient(socketFd, "No Broadcast Infor");
+                ErrorToClient(socketFd, "No Broadcast Information sent by client");
             }
 
             BroadcastRequest brdReq = clientMessage.broadcast();
-            std::cout << "Broadcast message:" << brdReq.message() << std::endl;
+            std::cout << "Broadcast Message Request:" << brdReq.message() << std::endl;
 
         
             BroadcastResponse *brdRes = new BroadcastResponse();
@@ -402,7 +412,7 @@ void *client_thread(void *params)
                 
             }
 
-            printf("En teoria el server lo mando bien");
+            printf("Sending message to all clients\n");
             
 
         }

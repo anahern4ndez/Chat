@@ -79,6 +79,8 @@ struct Client
     message_queue *sent_messages;
 };
 
+struct thread_params { chat_data *c_data; struct sockaddr_in *cli_addr; };
+
 std::unordered_map<std::string, Client *> clients;
 // chat_data data; // data global para todos los threads
 
@@ -90,6 +92,7 @@ message_queue* init_queue(void);
 void init_chat(int sockfd);
 void new_client(chat_data *chat, int new_socket);
 std::string find_by_id(int id, std::string sender_username);
+void *listen_to_connections(void *params);
 
 void error(const char *msg)
 {
@@ -101,8 +104,7 @@ void error(const char *msg)
 int main(int argc, char *argv[])
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
-    int sockfd, newsockfd, client_num;
-    socklen_t clilen;
+    int sockfd, client_num;
     sockaddr_in serv_addr, cli_addr;
     long port = 9999; // el puerto default es 9999
     char cli_addr_addr[INET_ADDRSTRLEN];
@@ -142,21 +144,12 @@ int main(int argc, char *argv[])
         error("ERROR on listening.\n");
     }
     printf("Listening...  %ld\n", port);
-    // Se quedara esperando nuevas conexiones 
-    while (1)
-    {
-        // el accept accederá a una nueva conexión con un cliente. Crea un nuevo socket para que el anterior 
-        // pueda quedarse escuchando para otras nuevas conexiones. 
-        clilen = sizeof cli_addr;
-        newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
-        if (newsockfd < 0)
-            error("ERROR en accept()");
-        new_client(&data, newsockfd);
-        // pthread_join(data.threads[data.client_num], NULL);
-    }
-    // for(int i = 0; i < data.client_num; i++){
-    //     pthread_join(data.threads[i], NULL);
-    // }
+    thread_params params = {&data, &cli_addr};
+    pthread_t listen_c_t;
+    pthread_create(&listen_c_t, NULL, listen_to_connections, (void *)&params);
+
+    //end of chat
+    pthread_join(listen_c_t, NULL);
     pthread_mutex_destroy(&data.client_queue_mutex);
     google::protobuf::ShutdownProtobufLibrary();
 }
@@ -175,6 +168,26 @@ void ErrorToClient(int socketFd, std::string errorMsg)
     send(socketFd, buffer, sizeof buffer, 0);
 }
 
+void *listen_to_connections(void *params){
+    thread_params *data = (thread_params *)params;
+    socklen_t clilen;
+    int newsockfd;
+    while (1)
+    {
+        // el accept accederá a una nueva conexión con un cliente. Crea un nuevo socket para que el anterior 
+        // pueda quedarse escuchando para otras nuevas conexiones. 
+        clilen = sizeof data->cli_addr;
+        newsockfd = accept(data->c_data->socketFd, (struct sockaddr *)&data->cli_addr, &clilen);
+        if (newsockfd < 0)
+            error("ERROR en accept()");
+        new_client(data->c_data, newsockfd);
+    }
+    for (int i = 0; i < data->c_data->client_num; i++)
+    {
+        pthread_join(data->c_data->threads[i], NULL);
+    }
+    
+}
 
 void bind_socket(struct sockaddr_in serverAddr, int socketFd, long port){
     serverAddr.sin_family = AF_INET;  
@@ -207,7 +220,6 @@ void new_client(chat_data *chat, int new_socket){
         pthread_create(&chat->threads[chat->client_num], NULL, client_thread, (void *)&new_socket);
     }
     pthread_mutex_unlock(&chat->client_queue_mutex);
-    pthread_join(chat->threads[chat->client_num], NULL);
 }
 
 void *client_thread(void *params)

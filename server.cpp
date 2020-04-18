@@ -447,6 +447,7 @@ void *client_thread(void *params)
             strcpy(cstr, msgSerialized.c_str());   
             send(socketFd, cstr, strlen(cstr), 0);
         }
+        //std::cout << "--- Users:  " << clients.size() << std::endl;
         
     }
 

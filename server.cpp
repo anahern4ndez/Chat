@@ -26,7 +26,8 @@ enum ClientOpt {
     CONNECTED_USERS = 2,
     STATUS = 3,
     BROADCAST_C =4,
-    DM = 5
+    DM = 5,
+    ACKNOWLEDGE = 6
 };
 // opciones de mensaje para el server
 enum ServerOpt {
@@ -209,6 +210,7 @@ void *client_thread(void *params)
     int socketFd = *(int *)params;
     struct Client thisClient;
     char buffer[MAX_BUFFER];
+    bool can_connect = false; // se permitira el envio de mensajes si se realizo el handshake
     std::string msgSerialized;
     ClientMessage clientMessage;
     ClientMessage clientAcknowledge;
@@ -236,7 +238,7 @@ void *client_thread(void *params)
             if (!clientMessage.has_synchronize())
             {
                 ErrorToClient(socketFd, "Failed to Synchronize");
-                break;
+                exit(0);
             }
             
             thisClient.username = clientMessage.synchronize().username();
@@ -252,7 +254,7 @@ void *client_thread(void *params)
             serverMessage.set_allocated_myinforesponse(serverResponse);
 
             serverMessage.SerializeToString(&msgSerialized);
-
+            memset(&buffer[0], 0, sizeof(buffer)); //clear buffer
             // enviar de mensaje de cliente a server
             strcpy(buffer, msgSerialized.c_str());
             send(socketFd, buffer, msgSerialized.size() + 1, 0);
@@ -262,7 +264,7 @@ void *client_thread(void *params)
             clientAcknowledge.ParseFromString(buffer);
             if(!clientMessage.has_acknowledge()){
                 ErrorToClient(socketFd, "Failed to Acknowledge");
-                break;
+                exit(0);
             }
             thisClient.socketFd = socketFd;
             thisClient.received_messages = init_queue();
@@ -272,8 +274,92 @@ void *client_thread(void *params)
             std::pair<std::string, Client*> nclient (clientMessage.synchronize().username(), &thisClient);
             clients.insert(nclient);
             std::cout << "User "<< thisClient.username<< " connected."<<std::endl;
+            can_connect = true;
         } 
-        else if (clientMessage.option() == ClientOpt::BROADCAST_C){
+        else if(clientMessage.option() == ClientOpt::CONNECTED_USERS && can_connect){
+            if (!clientMessage.has_connectedusers())
+            {
+                ErrorToClient(socketFd, "Failed to request connected users.");
+                break;
+            }
+            if(clientMessage.connectedusers().userid() == 0){ //si userid 0, se devuelven todos los usuarios
+                ConnectedUserResponse *response = new ConnectedUserResponse();
+                for (auto user = clients.begin(); user != clients.end(); ++user)
+                {
+                    if (user->first != thisClient.username)
+                    {
+                        Client *info = user->second;
+                        ConnectedUser *user_info =  new ConnectedUser();
+                        user_info->set_username(user->first);
+                        user_info->set_status(info->status);
+                        user_info->set_userid(info->userid);
+                        user_info->set_ip(info->ip_address);
+                        user_info = response->add_connectedusers();
+                    }
+                }
+                serverMessage.set_option(ServerOpt::C_USERS_RESPONSE);
+                serverMessage.set_allocated_connecteduserresponse(response);
+                serverMessage.SerializeToString(&msgSerialized);
+                // enviar de mensaje de cliente a server
+                char cstr[msgSerialized.size() + 1];
+                strcpy(cstr, msgSerialized.c_str());
+                send(socketFd, cstr, msgSerialized.size() + 1, 0);
+            }
+            else {
+                std::unordered_map<std::string, Client *>::const_iterator recipient;
+                std::string recipient_username;
+                if (clientMessage.connectedusers().has_username()){
+                    recipient_username = clientMessage.connectedusers().username();
+                    recipient = clients.find(recipient_username);
+                    if (recipient == clients.end()){
+                        ErrorToClient(socketFd, "Username not found.");
+                        break;
+                    }
+                }
+                else { //si se envio un userid
+                    if((recipient_username = find_by_id(clientMessage.connectedusers().userid(), thisClient.username)) == ""){
+                        ErrorToClient(socketFd, "UserID not found. ");
+                        break;
+                    }
+                    recipient = clients.find(recipient_username);
+                }
+                Client *info = recipient->second;
+                ConnectedUser *user_info =  new ConnectedUser();
+                user_info->set_username(recipient->first);
+                user_info->set_status(info->status);
+                user_info->set_userid(info->userid);
+                user_info->set_ip(info->ip_address);
+                ConnectedUserResponse *response = new ConnectedUserResponse();
+                user_info = response->add_connectedusers();
+                serverMessage.set_option(ServerOpt::C_USERS_RESPONSE);
+                serverMessage.set_allocated_connecteduserresponse(response);
+                serverMessage.SerializeToString(&msgSerialized);
+                // enviar de mensaje de cliente a server
+                char cstr[msgSerialized.size() + 1];
+                strcpy(cstr, msgSerialized.c_str());
+                send(socketFd, cstr, msgSerialized.size() + 1, 0);
+            }
+        }
+        else if(clientMessage.option() == ClientOpt::STATUS  && can_connect){
+            if (!clientMessage.has_changestatus())
+            {
+                ErrorToClient(socketFd, "Failed to change status.");
+                break;
+            }
+            std::string new_status = clientMessage.changestatus().status();
+            ChangeStatusResponse *response = new ChangeStatusResponse();
+            response->set_userid(thisClient.userid);
+            response->set_status(new_status);
+            serverMessage.set_option(ServerOpt::CHANGE_STATUS);
+            serverMessage.set_allocated_changestatusresponse(response);
+            serverMessage.SerializeToString(&msgSerialized);
+            // enviar de mensaje de cliente a server
+            char cstr[msgSerialized.size() + 1];
+            strcpy(cstr, msgSerialized.c_str());
+            send(socketFd, cstr, msgSerialized.size() + 1, 0);
+
+        }
+        else if (clientMessage.option() == ClientOpt::BROADCAST_C && can_connect){
 
             if (!clientMessage.has_broadcast())
             {
@@ -310,14 +396,12 @@ void *client_thread(void *params)
             {
                 if (item->first != thisClient.username)
                 {
-                    send(4, buffer, msgSerialized.size() + 1, 0);
+                    send(item->second->socketFd, buffer, msgSerialized.size() + 1, 0);
                     
                 }
             }
-            
-
         }
-        else if (clientMessage.option() == ClientOpt::DM){
+        else if (clientMessage.option() == ClientOpt::DM && can_connect){
             if(!clientMessage.has_directmessage()){
                 ErrorToClient(socketFd, "Error in DM");
                 break;
@@ -363,7 +447,6 @@ void *client_thread(void *params)
             strcpy(cstr, msgSerialized.c_str());   
             send(socketFd, cstr, strlen(cstr), 0);
         }
-        std::cout << "--- Users:  " << clients.size() << std::endl;
         
     }
 
@@ -374,9 +457,20 @@ void *client_thread(void *params)
     pthread_exit(0);
 }
 
-// Client* find_by_id(int id){
-
-// }
+std::string find_by_id(int id, std::string sender_username){
+    std::string found_username = "";
+    //recorrer todos los elementos del mapa y encontrar match al id
+    for (auto item = clients.begin(); item != clients.end(); ++item)
+    {
+        if (item->first != sender_username)
+        {
+            if(item->second->userid == id){
+                found_username = item->first;
+            }
+        }
+    }
+    return found_username;
+}
 /*
     Metodo del thread handler para escuchar mensajes 
 */

@@ -45,6 +45,7 @@ void *listen_thread(void *params){
         recv(socketFd, buffer, 1024, 0);
         // recepcion y parse de mensaje del server
         serverMessage.ParseFromString(buffer);
+        
 
         if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
         {
@@ -117,10 +118,11 @@ void *options_thread(void *args)
 
 void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *argv[]){
     int n;
+
+    std::cout << "synch client" << std::endl;
     MyInfoSynchronize *clientInfo = new MyInfoSynchronize();
     clientInfo->set_username(argv[1]);
     clientInfo->set_ip(argv[2]);
-
     // Se crea instancia de Mensaje, se setea los valores deseados
     ClientMessage clientMessage;
     clientMessage.set_option(1);

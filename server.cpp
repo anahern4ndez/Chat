@@ -260,10 +260,10 @@ void *client_thread(void *params)
             recv(socketFd, buffer, MAX_BUFFER, 0);
 
             clientAcknowledge.ParseFromString(buffer);
-            if(!clientMessage.has_acknowledge()){
-                ErrorToClient(socketFd, "Failed to Acknowledge");
-                break;
-            }
+            //if(!clientMessage.has_acknowledge()){
+              //  ErrorToClient(socketFd, "Failed to Acknowledge");
+               // break;
+            //}
             thisClient.socketFd = socketFd;
             thisClient.received_messages = init_queue();
             thisClient.sent_messages = init_queue();
@@ -288,7 +288,7 @@ void *client_thread(void *params)
             brdRes->set_messagestatus("Sending Message...");
 
             serverMessage.Clear();
-            serverMessage.set_option(7);
+            serverMessage.set_option(ServerOpt::BOADCAST_RESPONSE);
             serverMessage.set_allocated_broadcastresponse(brdRes);
             serverMessage.SerializeToString(&msgSerialized);
 
@@ -301,27 +301,30 @@ void *client_thread(void *params)
             brdMsg->set_userid(socketFd);
 
             serverMessage.Clear();
-            serverMessage.set_option(2);
+            serverMessage.set_option(ServerOpt::BROADCAST_S);
             serverMessage.set_allocated_broadcast(brdMsg);
             serverMessage.SerializeToString(&msgSerialized);
 
             strcpy(buffer, msgSerialized.c_str());
             for (auto item = clients.begin(); item != clients.end(); ++item)
             {
-                if (item->first != thisClient.username)
-                {
-                    send(4, buffer, msgSerialized.size() + 1, 0);
+                
+                send(socketFd, buffer, msgSerialized.size() + 1, 0);
                     
-                }
+                
             }
+
+            printf("En teoria el server lo mando bien");
             
 
         }
         else if (clientMessage.option() == ClientOpt::DM){
+
             if(!clientMessage.has_directmessage()){
                 ErrorToClient(socketFd, "Error in DM");
                 break;
             }
+            
             if(!clientMessage.directmessage().has_username() && !clientMessage.directmessage().userid()){
                 ErrorToClient(socketFd, "You must specify recipient's ID or username.");
                 break;
@@ -363,7 +366,7 @@ void *client_thread(void *params)
             strcpy(cstr, msgSerialized.c_str());   
             send(socketFd, cstr, strlen(cstr), 0);
         }
-        //std::cout << "--- Users:  " << clients.size() << std::endl;
+        std::cout << "--- Users:  " << clients.size() << std::endl;
         
     }
 

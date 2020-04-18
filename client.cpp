@@ -27,7 +27,7 @@ enum ServerOpt {
     RESPONSE = 4,
     C_USERS_RESPONSE = 5,
     CHANGE_STATUS = 6,
-    BOADCAST_RESPONSE = 7,
+    BROADCAST_RESPONSE = 7,
     DM_RESPONSE = 8
 };
 
@@ -53,13 +53,15 @@ void *listen_thread(void *params){
         // recepcion y parse de mensaje del server
         serverMessage.ParseFromString(buffer);
         
-
-        if (serverMessage.option() == ServerOpt::BROADCAST_S)
-        {
-            cout << "UserId: " << serverMessage.broadcast().userid() << endl;
-            cout << "Mensaje: " << serverMessage.broadcast().message() << endl;
-
-        } else if (serverMessage.option() == ServerOpt::BOADCAST_RESPONSE)
+        if(serverMessage.option() == ServerOpt::BROADCAST_S){
+            break;
+        }
+        else if(serverMessage.option() == ServerOpt::MESSAGE){
+            // printf("Message received from user with ID %d\n \t-->>%s", serverMessage.message().userid(), serverMessage.message().message().c_str());
+            cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
+            cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+        }
+        else if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
         {
             cout << "Server response: " << endl;
             cout << "Option: " << serverMessage.option() << endl;
@@ -70,9 +72,18 @@ void *listen_thread(void *params){
             cout << "Server change status correctly" << endl;
             cout << "Message:" << serverMessage.changestatusresponse().status() << endl;
         
-        } else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
+        } 
+        else if(serverMessage.option() == ServerOpt::DM_RESPONSE){
+            if(serverMessage.directmessageresponse().messagestatus() == "SENT"){
+                cout << "Message sent successfully!" << endl;
+            }
+            else
+                cout << "Failed to send message." << endl;
+        }
+        else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
         {
-            cout << "Server responde with an error" << serverMessage.error().errormessage() << endl;
+            cout << "Server response with an error: " << serverMessage.error().errormessage() << endl;
+            break;
         }
         serverMessage.Clear();
     }
@@ -97,14 +108,15 @@ void broadCast(char buffer[], int sockfd, string message){
     printf("Sending broadcast request tu server\n");
 }
 
-void directMS(char buffer[], int sockfd, string message, int userIdDestinatary){
+void directMS(int sockfd, string message, string recipient_username){
     string binary;
     ClientMessage clientMessage;
-    ServerMessage serverResponseMsg;
     DirectMessageRequest *directMsRequest = new DirectMessageRequest();
+    directMsRequest->set_message("hola mafs");
+    directMsRequest->set_userid(1);
+    directMsRequest->set_username("mafer");
     clientMessage.set_option(ClientOpt::DM);
-    directMsRequest->set_message(message);
-    directMsRequest->set_userid(userIdDestinatary);
+    clientMessage.set_userid(sockfd);
     clientMessage.set_allocated_directmessage(directMsRequest);
     clientMessage.SerializeToString(&binary);
     // sending clientMessage to server
@@ -112,7 +124,7 @@ void directMS(char buffer[], int sockfd, string message, int userIdDestinatary){
     strcpy(cstr, binary.c_str());
     // send to socket
     send(sockfd, cstr, strlen(cstr), 0 );
-    printf("Sending DM to %d by request to server\n", userIdDestinatary);
+    printf("Sending DM to %s by request to server\n", recipient_username.c_str());
 }
 
 void changeStatus(string status, int sockfd){
@@ -140,10 +152,8 @@ void *options_thread(void *args)
     int option;
     char buffer[8192];
     int socketFd = *(int *)args;
-    string message;
-    string status;
+    string message, status, directMessage, recipient_username;
     int idDestinatary;
-    string directMessage;
 
     printf("Thread for sending requests to server created\n");
 
@@ -170,9 +180,9 @@ void *options_thread(void *args)
             cin.ignore();
             printf("Enter the message you want to send: ");
             std::getline(cin, directMessage);
-            printf("Enter the ID User that you want to send message: ");
-            cin >> idDestinatary;
-            directMS(buffer, socketFd, message, idDestinatary);
+            printf("Enter the username of the receiver: ");
+            cin >> recipient_username;
+            directMS(socketFd, message, recipient_username);
         } else {
             break;
         }

@@ -11,6 +11,14 @@
 using namespace std;
 using namespace chat;
 
+// opciones de mensaje para el cliente
+enum ClientOpt {
+    SYNC = 1,
+    CONNECTED_USERS = 2,
+    STATUS = 3,
+    BROADCAST_C =4,
+    DM = 5
+};
 // opciones de mensaje para el server
 enum ServerOpt {
     BROADCAST_S = 1,
@@ -19,7 +27,7 @@ enum ServerOpt {
     RESPONSE = 4,
     C_USERS_RESPONSE = 5,
     CHANGE_STATUS = 6,
-    BROADCAST_RESPONSE = 7,
+    BOADCAST_RESPONSE = 7,
     DM_RESPONSE = 8
 };
 
@@ -31,7 +39,7 @@ void error(const char *msg)
 
 void *listen_thread(void *params){
     int socketFd = *(int *)params;
-    char buffer[1024];
+    char buffer[8192];
     string msgSerialized;
     ClientMessage clientMessage;
     ClientMessage clientAcknowledge;
@@ -41,13 +49,12 @@ void *listen_thread(void *params){
 
     while (1)
     {
-
-        recv(socketFd, buffer, 1024, 0);
+        recv(socketFd, buffer, 8192, 0);
         // recepcion y parse de mensaje del server
         serverMessage.ParseFromString(buffer);
         
 
-        if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
+        if (serverMessage.option() == ServerOpt::BROADCAST_S)
         {
             cout << "UserId: " << serverMessage.broadcast().userid() << endl;
             cout << "Mensaje: " << serverMessage.broadcast().message() << endl;
@@ -61,15 +68,16 @@ void *listen_thread(void *params){
 }
 
 void broadCast(char buffer[], int sockfd){
-    printf("ENTRO");
-    string message = "Hola mundo";
+    string message;
+    printf("Ingresa el mensaje que quieres mandar: ");
+    cin >> message;
     string binary;
     ClientMessage clientMessage;
     ServerMessage serverResponseMsg;
 
     BroadcastRequest *brdRequest = new BroadcastRequest();
 
-    clientMessage.set_option(4);
+    clientMessage.set_option(ClientOpt::BROADCAST_C);
     brdRequest->set_message(message);
     clientMessage.set_allocated_broadcast(brdRequest);
     clientMessage.SerializeToString(&binary);
@@ -88,6 +96,7 @@ void broadCast(char buffer[], int sockfd){
     cout << "Server response: " << endl;
     cout << "Option: " << serverResponseMsg.option() << endl;
     cout << "Message:" << serverResponseMsg.broadcastresponse().messagestatus() << endl;
+
     if(serverResponseMsg.option() == 3 && serverResponseMsg.has_error()){
         cout << "Server responde with an error" << serverResponseMsg.error().errormessage() << endl;
     }
@@ -97,7 +106,7 @@ void broadCast(char buffer[], int sockfd){
 void *options_thread(void *args)
 {
     int option;
-    char buffer[1024];
+    char buffer[8192];
     int socketFd = *(int *)args;
 
     while (1)
@@ -125,7 +134,7 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
     clientInfo->set_ip(argv[2]);
     // Se crea instancia de Mensaje, se setea los valores deseados
     ClientMessage clientMessage;
-    clientMessage.set_option(1);
+    clientMessage.set_option(ClientOpt::SYNC);
     clientMessage.set_allocated_synchronize(clientInfo);
 
     // Se serializa el message a string
@@ -211,15 +220,14 @@ int main(int argc, char *argv[])
     pthread_t listen_client;
     pthread_t options_client;
 
-    if (pthread_create(&listen_client, NULL, listen_thread, (void *)&sockfd) 
-            || pthread_create(&options_client, NULL, options_thread, (void *)&sockfd))
-            {
-                cout << "Error: unable to create threads." << endl;
-                exit(-1);
-            }
+    if (pthread_create(&listen_client, NULL, listen_thread, (void *)&sockfd) || pthread_create(&options_client, NULL, options_thread, (void *)&sockfd))
+    {
+        cout << "Error: unable to create threads." << endl;
+        exit(-1);
+    }
 
-            pthread_join (listen_client, NULL);
-            pthread_join (options_client, NULL);
+    pthread_join (listen_client, NULL);
+    pthread_join (options_client, NULL);
     
 
     

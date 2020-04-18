@@ -51,11 +51,7 @@ void *listen_thread(void *params){
             cout << "UserId: " << serverMessage.broadcast().userid() << endl;
             cout << "Mensaje: " << serverMessage.broadcast().message() << endl;
 
-        } else {
-
-            cout << "Option: " << serverMessage.option() << endl;
-
-        }
+        } 
 
         serverMessage.Clear();
     }
@@ -105,7 +101,6 @@ void *options_thread(void *args)
 
     while (1)
     {
-        printf("1. Synch \n");
         printf("4. Broadcast\n");
         cin >> option;
         if(option == 4){

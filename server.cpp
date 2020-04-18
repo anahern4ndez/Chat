@@ -367,7 +367,6 @@ void *client_thread(void *params)
                 char cstr[msgSerialized.size() + 1];
                 strcpy(cstr, msgSerialized.c_str());
                 send(socketFd, cstr, msgSerialized.size() + 1, 0);
-
             }
             else if (clientMessage.option() == ClientOpt::BROADCAST_C && can_connect){
                 

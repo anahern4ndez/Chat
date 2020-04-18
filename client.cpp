@@ -45,7 +45,7 @@ void *listen_thread(void *params){
     ClientMessage clientAcknowledge;
     ServerMessage serverMessage;
 
-    printf("Entro al thread\n");
+    printf("Thread for hearing responses of server created\n");
 
     while (1)
     {
@@ -59,47 +59,61 @@ void *listen_thread(void *params){
             cout << "UserId: " << serverMessage.broadcast().userid() << endl;
             cout << "Mensaje: " << serverMessage.broadcast().message() << endl;
 
-        } 
+        } else if (serverMessage.option() == ServerOpt::BOADCAST_RESPONSE)
+        {
+            cout << "Server response: " << endl;
+            cout << "Option: " << serverMessage.option() << endl;
+            cout << "Message:" << serverMessage.broadcastresponse().messagestatus() << endl;
 
+        } else if (serverMessage.option() == ServerOpt::CHANGE_STATUS)
+        {
+            cout << "Server change status correctly" << endl;
+            cout << "Message:" << serverMessage.changestatusresponse().status() << endl;
+        
+        } else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
+        {
+            cout << "Server responde with an error" << serverMessage.error().errormessage() << endl;
+        }
         serverMessage.Clear();
     }
     close(socketFd);
     pthread_exit(0);
 }
 
-void broadCast(char buffer[], int sockfd){
-    string message;
-    printf("Ingresa el mensaje que quieres mandar: ");
-    cin >> message;
+void broadCast(char buffer[], int sockfd, string message){
     string binary;
     ClientMessage clientMessage;
     ServerMessage serverResponseMsg;
-
     BroadcastRequest *brdRequest = new BroadcastRequest();
-
     clientMessage.set_option(ClientOpt::BROADCAST_C);
     brdRequest->set_message(message);
     clientMessage.set_allocated_broadcast(brdRequest);
     clientMessage.SerializeToString(&binary);
+    // sending clientMessage to server
+    char cstr[binary.size() + 1];
+    strcpy(cstr, binary.c_str());
+    // send to socket
+    send(sockfd, cstr, strlen(cstr), 0 );
+    printf("Sending broadcast request tu server\n");
+}
 
-    // envio de mensaje de cliente a server 
+void changeStatus(string status, int sockfd){
+    string binary;
+    ClientMessage clientMessage;
+    ServerMessage serverResponseMsg;
+
+    ChangeStatusRequest *statusRequest = new ChangeStatusRequest();
+    clientMessage.set_option(ClientOpt::STATUS);
+    statusRequest->set_status(status);
+
+    clientMessage.set_allocated_changestatus(statusRequest);
+    clientMessage.SerializeToString(&binary);
+
     char cstr[binary.size() + 1];
     strcpy(cstr, binary.c_str());
 
-    // send to socket
-    send(sockfd, cstr, strlen(cstr), 0 );
-
-    printf("en teoria llega al send");
-
-    read(sockfd, buffer, 8192);
-    serverResponseMsg.ParseFromString(buffer);
-    cout << "Server response: " << endl;
-    cout << "Option: " << serverResponseMsg.option() << endl;
-    cout << "Message:" << serverResponseMsg.broadcastresponse().messagestatus() << endl;
-
-    if(serverResponseMsg.option() == 3 && serverResponseMsg.has_error()){
-        cout << "Server responde with an error" << serverResponseMsg.error().errormessage() << endl;
-    }
+    send(sockfd, cstr, strlen(cstr), 0);
+    printf("Sending change status request to server\n");
 
 }
 
@@ -108,15 +122,26 @@ void *options_thread(void *args)
     int option;
     char buffer[8192];
     int socketFd = *(int *)args;
+    string status;
+
+    printf("Thread for sending requests to server created\n");
 
     while (1)
     {
         printf("4. Broadcast\n");
+        printf("5. Change Status\n");
         cin >> option;
         if(option == 4){
-            broadCast(buffer, socketFd);
-        }else if(option == 1){
-            
+            string message;
+            printf("Enter the message you want to send: ");
+            cin >> message;
+            broadCast(buffer, socketFd, message);
+        }else if(option == 5){
+            printf("Escoge un estado\n");
+            printf("Activo\n");
+            printf("Desconectado\n");
+            cin >> status;
+            changeStatus(status, socketFd);
         } else {
             break;
         }

@@ -97,6 +97,24 @@ void broadCast(char buffer[], int sockfd, string message){
     printf("Sending broadcast request tu server\n");
 }
 
+void directMS(char buffer[], int sockfd, string message, int userIdDestinatary){
+    string binary;
+    ClientMessage clientMessage;
+    ServerMessage serverResponseMsg;
+    DirectMessageRequest *directMsRequest = new DirectMessageRequest();
+    clientMessage.set_option(ClientOpt::DM);
+    directMsRequest->set_message(message);
+    directMsRequest->set_userid(userIdDestinatary);
+    clientMessage.set_allocated_directmessage(directMsRequest);
+    clientMessage.SerializeToString(&binary);
+    // sending clientMessage to server
+    char cstr[binary.size() + 1];
+    strcpy(cstr, binary.c_str());
+    // send to socket
+    send(sockfd, cstr, strlen(cstr), 0 );
+    printf("Sending DM to %d by request to server\n", userIdDestinatary);
+}
+
 void changeStatus(string status, int sockfd){
     string binary;
     ClientMessage clientMessage;
@@ -122,7 +140,10 @@ void *options_thread(void *args)
     int option;
     char buffer[8192];
     int socketFd = *(int *)args;
+    string message;
     string status;
+    int idDestinatary;
+    string directMessage;
 
     printf("Thread for sending requests to server created\n");
 
@@ -130,18 +151,24 @@ void *options_thread(void *args)
     {
         printf("4. Broadcast\n");
         printf("5. Change Status\n");
+        printf("6. Direct Message\n");
         cin >> option;
-        if(option == 4){
-            string message;
+        if (option == 4){
             printf("Enter the message you want to send: ");
             cin >> message;
             broadCast(buffer, socketFd, message);
-        }else if(option == 5){
+        } else if (option == 5){
             printf("Escoge un estado\n");
             printf("Activo\n");
             printf("Desconectado\n");
             cin >> status;
             changeStatus(status, socketFd);
+        } else if (option == 6){
+            printf("Enter the message you want to send: ");
+            cin >> directMessage;
+            printf("Enter the ID User that you want to send message: ");
+            cin >> idDestinatary;
+            directMS(buffer, socketFd, message, idDestinatary);
         } else {
             break;
         }
@@ -165,7 +192,7 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
     // Se serializa el message a string
     string binary;
     clientMessage.SerializeToString(&binary);
-    
+
     // envio de mensaje de cliente a server 
     char cstr[binary.size() + 1];
     strcpy(cstr, binary.c_str());
@@ -173,8 +200,9 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
     // send to socket
     send(sockfd, cstr, strlen(cstr), 0 );
 
-        // listen for server response
+    // listen for server response
     bzero(buffer,8192);
+    printf("Hellow\n"); 
     n = read(sockfd, buffer, 255);
     if (n < 0) 
          error("ERROR reading from socket");

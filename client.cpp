@@ -154,18 +154,21 @@ void *options_thread(void *args)
         printf("6. Direct Message\n");
         cin >> option;
         if (option == 4){
+            cin.ignore();
             printf("Enter the message you want to send: ");
-            cin >> message;
+            std::getline(cin, message);
             broadCast(buffer, socketFd, message);
         } else if (option == 5){
+            cin.ignore();
             printf("Escoge un estado\n");
             printf("Activo\n");
             printf("Desconectado\n");
-            cin >> status;
+            std::getline(cin, status);
             changeStatus(status, socketFd);
         } else if (option == 6){
+            cin.ignore();
             printf("Enter the message you want to send: ");
-            cin >> directMessage;
+            std::getline(cin, directMessage);
             printf("Enter the ID User that you want to send message: ");
             cin >> idDestinatary;
             directMS(buffer, socketFd, message, idDestinatary);

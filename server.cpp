@@ -432,9 +432,9 @@ void *client_thread(void *params)
                 // std::cout << clientMessage.directmessage().SerializeAsString() << std::endl;
                 // std::cout << clientMessage.directmessage().has_username() << std::endl;
                 // std::cout << clientMessage.directmessage().has_userid() << std::endl;
-                // std::cout << clientMessage.directmessage().username() << std::endl;
-                // std::cout << clientMessage.userid() << std::endl;
-                // std::cout << clientMessage.directmessage().message() << std::endl;
+                std::cout << clientMessage.directmessage().username() << std::endl;
+                std::cout << clientMessage.userid() << std::endl;
+                std::cout << clientMessage.directmessage().message() << std::endl;
                 if(!clientMessage.has_directmessage()){
                     ErrorToClient(socketFd, "Error in DM");
                     goto loop;

@@ -11,6 +11,8 @@
 using namespace std;
 using namespace chat;
 
+#define MAX_BUFFER 8192//tamaño maximo de caracteres para mandar mensaje
+
 // opciones de mensaje para el cliente
 enum ClientOpt {
     SYNC = 1,
@@ -45,16 +47,17 @@ void *listen_thread(void *params){
     ClientMessage clientAcknowledge;
     ServerMessage serverMessage;
 
-    printf("Thread for hearing responses of server created\n");
+    cout << "Thread for hearing responses of server created" << endl;
 
-    while (1)
+    loop: while (1)
     {
         recv(socketFd, buffer, 8192, 0);
         // recepcion y parse de mensaje del server
         serverMessage.ParseFromString(buffer);
         
         if(serverMessage.option() == ServerOpt::BROADCAST_S){
-            break;
+            cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
+            cout << "\t --> " << serverMessage.broadcast().message().c_str() << endl;
         }
         else if(serverMessage.option() == ServerOpt::MESSAGE){
             // printf("Message received from user with ID %d\n \t-->>%s", serverMessage.message().userid(), serverMessage.message().message().c_str());
@@ -83,7 +86,7 @@ void *listen_thread(void *params){
         else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
         {
             cout << "Server response with an error: " << serverMessage.error().errormessage() << endl;
-            break;
+            goto loop;
         }
         serverMessage.Clear();
     }
@@ -105,16 +108,16 @@ void broadCast(char buffer[], int sockfd, string message){
     strcpy(cstr, binary.c_str());
     // send to socket
     send(sockfd, cstr, strlen(cstr), 0 );
-    printf("Sending broadcast request tu server\n");
+    cout << "Sending broadcast request to server" <<endl;
 }
 
 void directMS(int sockfd, string message, string recipient_username){
     string binary;
     ClientMessage clientMessage;
     DirectMessageRequest *directMsRequest = new DirectMessageRequest();
-    directMsRequest->set_message("hola mafs");
+    directMsRequest->set_message(message);
     directMsRequest->set_userid(1);
-    directMsRequest->set_username("mafer");
+    directMsRequest->set_username(recipient_username);
     clientMessage.set_option(ClientOpt::DM);
     clientMessage.set_userid(sockfd);
     clientMessage.set_allocated_directmessage(directMsRequest);
@@ -168,7 +171,6 @@ void *options_thread(void *args)
             printf("Enter the message you want to send: ");
             std::getline(cin, message);
             broadCast(buffer, socketFd, message);
-            sleep(3);
         } else if (option == 5){
             cin.ignore();
             printf("Escoge un estado\n");
@@ -179,10 +181,12 @@ void *options_thread(void *args)
         } else if (option == 6){
             cin.ignore();
             printf("Enter the message you want to send: ");
-            std::getline(cin, directMessage);
+            getline(cin, directMessage);
+            // cin.ignore();
             printf("Enter the username of the receiver: ");
             cin >> recipient_username;
-            directMS(socketFd, message, recipient_username);
+            // cin.ignore();
+            directMS(socketFd, directMessage, recipient_username);
         } else {
             break;
         }

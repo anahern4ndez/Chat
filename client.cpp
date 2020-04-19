@@ -107,6 +107,7 @@ void *listen_thread(void *params){
                 }
             } else if (serverMessage.option() == ServerOpt::C_USERS_RESPONSE)
             {
+                
                 if((serverMessage.connecteduserresponse().connectedusers_size()) != 0){
                     cout << "Users connected in chat are: " << endl;
                     cout << "Users connected: " << serverMessage.connecteduserresponse().connectedusers_size() << endl;
@@ -114,6 +115,15 @@ void *listen_thread(void *params){
                         ConnectedUser tmpUser = serverMessage.connecteduserresponse().connectedusers(i);
                         cout << "USERNAME: " << tmpUser.username() << endl;
                         cout << "----------------------------------" << endl;
+                    }
+                } else if(serverMessage.connecteduserresponse().connectedusers(0).has_userid()) {
+                    cout << "Information of user is: " << endl;
+                    for (int i = 0; i < serverMessage.connecteduserresponse().connectedusers_size(); i++) {
+                        ConnectedUser tmpUser = serverMessage.connecteduserresponse().connectedusers(i);
+                        cout << "USERNAME: " << tmpUser.username() << endl;
+                        cout << "ID: " << tmpUser.userid() << endl;
+                        cout << "STATUS: " << tmpUser.status() << endl;
+                        cout << "IP: " << tmpUser.ip() << endl;
                     }
                 } else {
                     cout << "No users connected in the chat" << endl;

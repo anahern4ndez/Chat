@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <fcntl.h>
 #include <iomanip>
+#include <map>
 #include "mensaje.pb.h"
 using namespace chat;
 
@@ -21,6 +22,9 @@ using namespace chat;
 #define MAX_CONNECTIONS 20 //establece la cantidad maxima de conexiones que el server puede tener simultaneamente
 #define MAX_BUFFER 8192 //cantidad maxima de caracteres en un mensaje
 #define INACTIVE_TIME 20 //cantidad de tiempo sin actividad para cambiar de estado a cliente 
+
+// Con esto podremos manejar los tiempos de cada usuarios que ingrese
+std::map<int, float> tiemposInactivos;
 
 // opciones de mensaje para el cliente
 enum ClientOpt {
@@ -320,6 +324,7 @@ void *client_thread(void *params)
                 clients.insert(nclient);
                 std::cout << "User "<< thisClient.username<< " connected."<<std::endl;
                 can_connect = true;
+                tiemposInactivos[thisClient.userid] = 0;
                 pthread_t timer_thread;
                 pthread_create(&timer_thread, NULL, timer, (void *)&thisClient);
                 newRequest = true;
@@ -378,6 +383,7 @@ void *client_thread(void *params)
                     send(socketFd, cstr, msgSerialized.size() + 1, 0);
                 }
                 newRequest = true;
+                tiemposInactivos[thisClient.userid] = 0;
 
             }
             else if(clientMessage.option() == ClientOpt::STATUS  && can_connect){
@@ -408,6 +414,7 @@ void *client_thread(void *params)
                 std::cout << "Server changed status for:" << thisClient.username << std::endl;
                 std::cout << "Sending response to client." << std::endl;
                 newRequest = true;
+                tiemposInactivos[thisClient.userid] = 0;
 
 
             }
@@ -455,6 +462,7 @@ void *client_thread(void *params)
                 }
                 printf("Sending Broadcast Message to all clients\n");
                 newRequest = true;
+                tiemposInactivos[thisClient.userid] = 0;
 
             }
             else if (clientMessage.option() == ClientOpt::DM && can_connect){
@@ -504,6 +512,7 @@ void *client_thread(void *params)
                 strcpy(cstr, msgSerialized.c_str());   
                 send(socketFd, cstr, strlen(cstr), 0);
                 newRequest = true;
+                tiemposInactivos[thisClient.userid] = 0;
 
             }
             clientMessage.Clear(); // clear clientMessage
@@ -557,35 +566,37 @@ message_queue* init_queue(void){
 }
 
 void *timer(void *params) {
-    int seconds = 0;
     Client client = *(Client *) params;
     ServerMessage serverMessage;
     std::string msgSerialized;
+    std::cout << client.userid <<" ID Cliente " << std::endl;
+    // float seconds = tiemposInactivos[client.userid];
 
     // printf("Entro");
 
-    while(newRequest == false){
-        sleep(1); 
-        seconds++;
-        // std::cout << seconds << std::endl;
-        if(seconds >= INACTIVE_TIME){
-            seconds = 0;
-            client.status = "Inactivo";
-            ChangeStatusResponse *response = new ChangeStatusResponse();
-            response->set_userid(client.userid);
-            response->set_status("Inactivo");
-            serverMessage.set_option(ServerOpt::CHANGE_STATUS);
-            serverMessage.set_allocated_changestatusresponse(response);
-            serverMessage.SerializeToString(&msgSerialized);
+    while(1){
+        if(tiemposInactivos[client.userid] < INACTIVE_TIME){
+            sleep(1); 
+            tiemposInactivos[client.userid]++;
+            // std::cout << seconds << std::endl;
+            if(tiemposInactivos[client.userid] == INACTIVE_TIME){
+                client.status = "Inactivo";
+                ChangeStatusResponse *response = new ChangeStatusResponse();
+                response->set_userid(client.userid);
+                response->set_status("Inactivo");
+                serverMessage.set_option(ServerOpt::CHANGE_STATUS);
+                serverMessage.set_allocated_changestatusresponse(response);
+                serverMessage.SerializeToString(&msgSerialized);
 
-            // sendig message to client
-            char cstr[msgSerialized.size() + 1];
-            strcpy(cstr, msgSerialized.c_str());
-            send(client.socketFd, cstr, msgSerialized.size() + 1, 0);
-            std::cout << "Server changed status for:" << client.username << std::endl;
-            std::cout << "Sending update to client" << std::endl;
-            break;
+                // sendig message to client
+                char cstr[msgSerialized.size() + 1];
+                strcpy(cstr, msgSerialized.c_str());
+                send(client.socketFd, cstr, msgSerialized.size() + 1, 0);
+                std::cout << "Server changed status for:" << client.username << std::endl;
+                std::cout << "Sending update to client" << std::endl;
+            }
         }
+        //std::cout << tiemposInactivos[client.userid] << std::endl;
     }
 
     pthread_exit(0);

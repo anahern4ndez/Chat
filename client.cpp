@@ -100,7 +100,7 @@ void *listen_thread(void *params){
             } else if (serverMessage.option() == ServerOpt::MESSAGE)
             {
                 if(serverMessage.message().has_username()){
-                    cout << serverMessage.message().username() << ": " << serverMessage.message.message.c_str() << endl;
+                    cout << serverMessage.message().username() << ": " << serverMessage.message().message().c_str() << endl;
                 } else {
                     cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
                     cout << "\t --> " << serverMessage.message().message().c_str() << endl;

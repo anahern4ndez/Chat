@@ -122,13 +122,16 @@ void *listen_thread(void *params){
             } else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
             {
                 cout << "Server response with an error: " << serverMessage.error().errormessage() << endl;
-                goto loop;
+                if(serverMessage.error().errormessage() == "Failed to Synchronize")
+                    exit(0);
+                else
+                    goto loop;
             }
             serverMessage.Clear();
         }
         else {
             pthread_cancel(options_client); //request para que el otro thread termine
-            std::cout << "exiting" << endl;
+            std::cout << "Exiting client." << endl;
             // close(socketFd);
             exit(0);
             pthread_exit(0);
@@ -255,11 +258,11 @@ void *options_thread(void *args)
 
     while (1)
     {
-        printf("1.. Broadcast\n");
-        printf("2. Direct Message\n");
+        printf("1. Broadcast a message\n");
+        printf("2. Direct Message someone\n");
         printf("3. Change Status\n");
-        printf("4. See ConnectedUsers \n");
-        printf("5. Request Information of a User\n");
+        printf("4. See connected users \n");
+        printf("5. Request information of a user\n");
         printf("6. Info\n");
         printf("7. Exit\n");
         cin >> option;

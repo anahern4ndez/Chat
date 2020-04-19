@@ -262,7 +262,7 @@ void *client_thread(void *params)
         if ((read_bytes = (recv(socketFd, buffer, MAX_BUFFER, 0))) > 0)
         {   
             clientMessage.ParseFromString(buffer); 
-            std::cout << "NewRequestVal" << newRequest << std::endl;
+            // std::cout << "NewRequestVal" << newRequest << std::endl;
 
             if (clientMessage.option() == ClientOpt::SYNC)
             {
@@ -272,12 +272,12 @@ void *client_thread(void *params)
                 if (!clientMessage.has_synchronize())
                 {
                     ErrorToClient(socketFd, "Failed to Synchronize");
-                    exit(0);
+                    pthread_exit(0);
                 }
 
                 if(clients.count(clientMessage.synchronize().username()) > 0)
                 {
-                    std::cout << "Trying to synch a user with username duplicated" << std::endl;
+                    std::cout << "Trying to sync a user with username duplicated. " << std::endl;
                     ErrorToClient(socketFd, "Username already exists in server.");
                     goto loop;
                 }
@@ -306,7 +306,7 @@ void *client_thread(void *params)
                 clientAcknowledge.ParseFromString(buffer);
                 if(!clientAcknowledge.has_acknowledge()){
                     ErrorToClient(socketFd, "Failed to Acknowledge");
-                    exit(-1);
+                    pthread_exit(0);
                 }
                 thisClient.socketFd = socketFd;
                 thisClient.received_messages = init_queue();
@@ -406,7 +406,7 @@ void *client_thread(void *params)
                 strcpy(cstr, msgSerialized.c_str());
                 send(socketFd, cstr, msgSerialized.size() + 1, 0);
                 std::cout << "Server changed status for:" << thisClient.username << std::endl;
-                std::cout << "sending response to client" << std::endl;
+                std::cout << "Sending response to client." << std::endl;
                 newRequest = true;
 
 
@@ -514,7 +514,7 @@ void *client_thread(void *params)
             pthread_exit(0);
 
         }
-        std::cout << newRequest << std::endl;
+        // std::cout << newRequest << std::endl;
         clientMessage.Clear(); // clear clientMessage
         newRequest = false;
     }

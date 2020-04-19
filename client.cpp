@@ -13,6 +13,9 @@ using namespace chat;
 
 #define MAX_BUFFER 8192//tamaño maximo de caracteres para mandar mensaje
 
+pthread_t listen_client;
+pthread_t options_client;
+
 // opciones de mensaje para el cliente
 enum ClientOpt {
     SYNC = 1,
@@ -33,6 +36,7 @@ enum ServerOpt {
     DM_RESPONSE = 8
 };
 
+
 void error(const char *msg)
 {
     perror(msg);
@@ -51,46 +55,51 @@ void *listen_thread(void *params){
 
     loop: while (1)
     {
-        recv(socketFd, buffer, 8192, 0);
+        int bytes_received = recv(socketFd, buffer, 8192, 0);
         // recepcion y parse de mensaje del server
-        serverMessage.ParseFromString(buffer);
-        
-        if(serverMessage.option() == ServerOpt::BROADCAST_S){
-            cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
-            cout << "\t --> " << serverMessage.broadcast().message().c_str() << endl;
-        }
-        else if(serverMessage.option() == ServerOpt::MESSAGE){
-            // printf("Message received from user with ID %d\n \t-->>%s", serverMessage.message().userid(), serverMessage.message().message().c_str());
-            cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
-            cout << "\t --> " << serverMessage.message().message().c_str() << endl;
-        }
-        else if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
-        {
-            cout << "Server response: " << endl;
-            cout << "Option: " << serverMessage.option() << endl;
-            cout << "Message:" << serverMessage.broadcastresponse().messagestatus() << endl;
-
-        } else if (serverMessage.option() == ServerOpt::CHANGE_STATUS)
-        {
-            cout << "Server change status correctly" << endl;
-            cout << "Message:" << serverMessage.changestatusresponse().status() << endl;
-        
-        } 
-        else if(serverMessage.option() == ServerOpt::DM_RESPONSE){
-            if(serverMessage.directmessageresponse().messagestatus() == "SENT"){
-                cout << "Message sent successfully!" << endl;
+        if (bytes_received > 0){
+            serverMessage.ParseFromString(buffer);
+            
+            if(serverMessage.option() == ServerOpt::BROADCAST_S){
+                cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
+                cout << "\t --> " << serverMessage.broadcast().message().c_str() << endl;
             }
-            else
-                cout << "Failed to send message." << endl;
+            else if(serverMessage.option() == ServerOpt::MESSAGE){
+                // printf("Message received from user with ID %d\n \t-->>%s", serverMessage.message().userid(), serverMessage.message().message().c_str());
+                cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
+                cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+            }
+            else if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
+            {
+                cout << "Server response: " << endl;
+                cout << "Option: " << serverMessage.option() << endl;
+                cout << "Message:" << serverMessage.broadcastresponse().messagestatus() << endl;
+
+            } else if (serverMessage.option() == ServerOpt::CHANGE_STATUS)
+            {
+                cout << "Server change status correctly" << endl;
+                cout << "Message:" << serverMessage.changestatusresponse().status() << endl;
+            
+            } 
+            else if(serverMessage.option() == ServerOpt::DM_RESPONSE){
+                if(serverMessage.directmessageresponse().messagestatus() == "SENT"){
+                    cout << "Message sent successfully!" << endl;
+                }
+                else
+                    cout << "Failed to send message." << endl;
+            }
+            else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
+            {
+                cout << "Server response with an error: " << serverMessage.error().errormessage() << endl;
+                goto loop;
+            }
+            serverMessage.Clear();
         }
-        else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
-        {
-            cout << "Server response with an error: " << serverMessage.error().errormessage() << endl;
-            goto loop;
+        else {
+            pthread_cancel(options_client); //request para que el otro thread termine
+            pthread_exit(0);
         }
-        serverMessage.Clear();
     }
-    close(socketFd);
     pthread_exit(0);
 }
 
@@ -157,7 +166,6 @@ void *options_thread(void *args)
     int socketFd = *(int *)args;
     string message, status, directMessage, recipient_username;
     int idDestinatary;
-
     printf("Thread for sending requests to server created\n");
 
     while (1)
@@ -165,6 +173,7 @@ void *options_thread(void *args)
         printf("4. Broadcast\n");
         printf("5. Change Status\n");
         printf("6. Direct Message\n");
+        printf("7. Exit\n");
         cin >> option;
         if (option == 4){
             cin.ignore();
@@ -187,8 +196,16 @@ void *options_thread(void *args)
             cin >> recipient_username;
             // cin.ignore();
             directMS(socketFd, directMessage, recipient_username);
-        } else {
-            break;
+        } 
+        else if (option == 7){
+            memset(&buffer[0], 0, sizeof(buffer)); //clear buffer
+            send(socketFd, NULL, 0, 0); //enviar mensaje vacio para notificar al servidor
+            pthread_cancel(listen_client); //request para que el otro thread termine
+            cout << "Goodbye!" << endl;
+            pthread_exit(0);
+        }
+        else {
+            cout << "Invalid option. " << endl;
         }
         
     }
@@ -254,8 +271,6 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     int option;
-
-
     char buffer[8192];
     
     if (argc != 4) {
@@ -284,10 +299,6 @@ int main(int argc, char *argv[])
     cout << "connect" << endl;
 
     synchUser(serv_addr, sockfd, buffer, argv);
-
-    pthread_t listen_client;
-    pthread_t options_client;
-
     if (pthread_create(&listen_client, NULL, listen_thread, (void *)&sockfd) || pthread_create(&options_client, NULL, options_thread, (void *)&sockfd))
     {
         cout << "Error: unable to create threads." << endl;
@@ -296,9 +307,6 @@ int main(int argc, char *argv[])
 
     pthread_join (listen_client, NULL);
     pthread_join (options_client, NULL);
-    
-
-    
     close(sockfd);
     return 0;
 }

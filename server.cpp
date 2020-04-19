@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[1]);
     }
-
+    std::cout << "**** Si desea salir, ingresar 'exit' ****" << std::endl;
     /* 
         La siguiente conexión y binding a un socket se tomó de:
         https://www.bogotobogo.com/cplusplus/sockets_server_client.php
@@ -147,11 +147,27 @@ int main(int argc, char *argv[])
     thread_params params = {&data, &cli_addr};
     pthread_t listen_c_t;
     pthread_create(&listen_c_t, NULL, listen_to_connections, (void *)&params);
-
+    std::string exit_v;
+    while(exit_v != "exit"){
+        std::cin >> exit_v;
+    }
+    std::cout << "Ending all connections... " << std::endl;
+    //notify connected clients 
+    for (auto user = clients.begin(); user != clients.end(); ++user){
+        send(user->second->socketFd, NULL, 0, 0);
+    }
+    //close all sockets & end all threads
+    for(int i = 0; i< data.client_num; i++){
+        close(data.connected_clients[i]);
+        pthread_cancel(data.threads[i]);
+    }
+    std::cout << "Goodbye!" << std::endl;
     //end of chat
-    pthread_join(listen_c_t, NULL);
+    pthread_cancel(listen_c_t);
+    close(sockfd);
     pthread_mutex_destroy(&data.client_queue_mutex);
     google::protobuf::ShutdownProtobufLibrary();
+    return 0;
 }
 
 void ErrorToClient(int socketFd, std::string errorMsg)
@@ -234,19 +250,12 @@ void *client_thread(void *params)
     ServerMessage serverMessage;
     int read_bytes = 0;
 
-    std::cout << "Thread for client with socket: " << socketFd << std::endl;
-
     loop: while (1)
     {   
         memset(&buffer[0], 0, sizeof(buffer)); //clear buffer
         msgSerialized[0] = 0; //clear serialized variable
-
-        // read(socketFd, buffer, MAX_BUFFER);
-        // recepcion y parse de mensaje del cliente
-        // Un if para cada opcion del cliente
-        if ((recv(socketFd, buffer, MAX_BUFFER, 0)) > 0)
+        if ((read_bytes = (recv(socketFd, buffer, MAX_BUFFER, 0))) > 0)
         {   
-            
             clientMessage.ParseFromString(buffer); 
             if (clientMessage.option() == ClientOpt::SYNC)
             {
@@ -428,13 +437,6 @@ void *client_thread(void *params)
                 printf("Sending Broadcast Message to all clients\n");
             }
             else if (clientMessage.option() == ClientOpt::DM && can_connect){
-                // std::cout << clientMessage.SerializeAsString() << std::endl;
-                // std::cout << clientMessage.directmessage().SerializeAsString() << std::endl;
-                // std::cout << clientMessage.directmessage().has_username() << std::endl;
-                // std::cout << clientMessage.directmessage().has_userid() << std::endl;
-                std::cout << clientMessage.directmessage().username() << std::endl;
-                std::cout << clientMessage.userid() << std::endl;
-                std::cout << clientMessage.directmessage().message() << std::endl;
                 if(!clientMessage.has_directmessage()){
                     ErrorToClient(socketFd, "Error in DM");
                     goto loop;
@@ -480,18 +482,19 @@ void *client_thread(void *params)
                 strcpy(cstr, msgSerialized.c_str());   
                 send(socketFd, cstr, strlen(cstr), 0);
             }
+            clientMessage.Clear(); // clear clientMessage
+            serverMessage.Clear();
+        }
+        else if (read_bytes == 0){
+            clients.erase(thisClient.username);
+            close(socketFd);
+            std::cout << "User "<< thisClient.username <<" exited. Closing socket " << socketFd << "."<< std::endl;
+            pthread_exit(0);
+
         }
         //std::cout << "--- Users:  " << clients.size() << std::endl;
-        clientMessage.Clear(); // clear clientMessage
-        serverMessage.Clear();
         
     }
-
-    clients.erase(thisClient.username);
-    close(socketFd);
-  
-    std::cout << "Closing socket " << socketFd << std::endl;
-    pthread_exit(0);
 }
 
 std::string find_by_id(int id, std::string sender_username){

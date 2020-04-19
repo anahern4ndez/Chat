@@ -73,6 +73,7 @@
         "clocale": "cpp",
         "condition_variable": "cpp",
         "memory_resource": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "future": "cpp"
     }
 }

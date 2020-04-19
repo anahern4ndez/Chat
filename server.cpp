@@ -324,7 +324,7 @@ void *client_thread(void *params)
                 clients.insert(nclient);
                 std::cout << "User "<< thisClient.username<< " connected."<<std::endl;
                 can_connect = true;
-                tiemposInactivos[thisClient.userid] = 0;
+                tiemposInactivos[thisClient.socketFd] = 0;
                 pthread_t timer_thread;
                 pthread_create(&timer_thread, NULL, timer, (void *)&thisClient);
                 newRequest = true;
@@ -383,7 +383,7 @@ void *client_thread(void *params)
                     send(socketFd, cstr, msgSerialized.size() + 1, 0);
                 }
                 newRequest = true;
-                tiemposInactivos[thisClient.userid] = 0;
+                tiemposInactivos[thisClient.socketFd] = 0;
 
             }
             else if(clientMessage.option() == ClientOpt::STATUS  && can_connect){
@@ -414,7 +414,7 @@ void *client_thread(void *params)
                 std::cout << "Server changed status for:" << thisClient.username << std::endl;
                 std::cout << "Sending response to client." << std::endl;
                 newRequest = true;
-                tiemposInactivos[thisClient.userid] = 0;
+                tiemposInactivos[thisClient.socketFd] = 0;
 
 
             }
@@ -462,7 +462,7 @@ void *client_thread(void *params)
                 }
                 printf("Sending Broadcast Message to all clients\n");
                 newRequest = true;
-                tiemposInactivos[thisClient.userid] = 0;
+                tiemposInactivos[thisClient.socketFd] = 0;
 
             }
             else if (clientMessage.option() == ClientOpt::DM && can_connect){
@@ -512,7 +512,7 @@ void *client_thread(void *params)
                 strcpy(cstr, msgSerialized.c_str());   
                 send(socketFd, cstr, strlen(cstr), 0);
                 newRequest = true;
-                tiemposInactivos[thisClient.userid] = 0;
+                tiemposInactivos[thisClient.socketFd] = 0;
 
             }
             clientMessage.Clear(); // clear clientMessage
@@ -569,20 +569,20 @@ void *timer(void *params) {
     Client client = *(Client *) params;
     ServerMessage serverMessage;
     std::string msgSerialized;
-    std::cout << client.userid <<" ID Cliente " << std::endl;
+    // std::cout << client.socketFd <<" ID Cliente " << std::endl;
     // float seconds = tiemposInactivos[client.userid];
 
     // printf("Entro");
 
     while(1){
-        if(tiemposInactivos[client.userid] < INACTIVE_TIME){
+        if(tiemposInactivos[client.socketFd] < INACTIVE_TIME){
             sleep(1); 
-            tiemposInactivos[client.userid]++;
+            tiemposInactivos[client.socketFd]++;
             // std::cout << seconds << std::endl;
-            if(tiemposInactivos[client.userid] == INACTIVE_TIME){
+            if(tiemposInactivos[client.socketFd] == INACTIVE_TIME){
                 client.status = "Inactivo";
                 ChangeStatusResponse *response = new ChangeStatusResponse();
-                response->set_userid(client.userid);
+                response->set_userid(client.socketFd);
                 response->set_status("Inactivo");
                 serverMessage.set_option(ServerOpt::CHANGE_STATUS);
                 serverMessage.set_allocated_changestatusresponse(response);
@@ -596,7 +596,7 @@ void *timer(void *params) {
                 std::cout << "Sending update to client" << std::endl;
             }
         }
-        //std::cout << tiemposInactivos[client.userid] << std::endl;
+        // std::cout << tiemposInactivos[client.socketFd] << std::endl;
     }
 
     pthread_exit(0);

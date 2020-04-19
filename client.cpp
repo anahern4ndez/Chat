@@ -7,11 +7,15 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <algorithm>
+#include <vector>
 #include "mensaje.pb.h"
 using namespace std;
 using namespace chat;
 
 #define MAX_BUFFER 8192//tamaño maximo de caracteres para mandar mensaje
+
+vector<int> chatsDirectos;
 
 pthread_t listen_client;
 pthread_t options_client;
@@ -43,6 +47,34 @@ void error(const char *msg)
     exit(0);
 }
 
+void *listen_thread_DM(void *params){
+    int socketFd = *(int *)params;
+    char buffer[8192];
+    string msgSerialized;
+    ClientMessage clientMessage;
+    ClientMessage clientAcknowledge;
+    ServerMessage serverMessage;
+
+    cout << "Thread for hearing responses of new DM created" << endl;
+
+    loop: while (1)  
+    {
+        recv(socketFd, buffer, 8192, 0);
+        // recepcion y parse de mensaje del server
+        serverMessage.ParseFromString(buffer);
+        
+        if (serverMessage.option() == ServerOpt::MESSAGE){
+            // printf("Message received from user with ID %d\n \t-->>%s", serverMessage.message().userid(), serverMessage.message().message().c_str());
+            cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
+            cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+        }
+
+        serverMessage.Clear();
+    }
+    close(socketFd);
+    pthread_exit(0);
+}
+
 void *listen_thread(void *params){
     int socketFd = *(int *)params;
     char buffer[8192];
@@ -65,9 +97,27 @@ void *listen_thread(void *params){
                 cout << "\t --> " << serverMessage.broadcast().message().c_str() << endl;
             }
             else if(serverMessage.option() == ServerOpt::MESSAGE){
-                // printf("Message received from user with ID %d\n \t-->>%s", serverMessage.message().userid(), serverMessage.message().message().c_str());
-                cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
-                cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+                // Se verifica si el id del emisor aun no ha creado un thread de DM con el cliente
+                //pthread_t listen_client_DirectM;
+                //if (!(std::find(chatsDirectos.begin(), chatsDirectos.end(), serverMessage.message().userid()) != chatsDirectos.end())) {
+                    // Se agrega el ID del emisor a un vector de chats directos que ya se abrieron
+                    //chatsDirectos.push_back(serverMessage.message().userid());
+                    // La primera vez se recibe el mensaje en este thread
+                    cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
+                    cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+                    // Se crea el thread de DM para el nuevo emisor
+
+
+                    //if (pthread_create(&listen_client_DirectM, NULL, listen_thread_DM, (void *)&socketFd))
+                    //{
+                        //cout << "Error: unable to create DM Thread." << endl;
+                        //exit(-1);
+                    //}
+                    //printf("aqui si");
+                    //pthread_detach(listen_client_DirectM); 
+                    //printf("Ya no llega aqui");
+                //}
+                
             }
             else if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
             {

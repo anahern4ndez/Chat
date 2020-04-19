@@ -368,10 +368,10 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
     
     // client response (acknowledge)
     MyInfoAcknowledge * infoAck(new MyInfoAcknowledge);
-    infoAck->set_userid(1);
+    infoAck->set_userid(sockfd);
     ClientMessage clientAcknowledge; //no se como hacerle "clear" al clientmessage entonces creare otro :( 
-    clientAcknowledge.set_option(1);
-    clientAcknowledge.set_userid(2); //hay que cambiarlo para que sea dinamico
+    clientAcknowledge.set_option(ClientOpt::SYNC);
+    clientAcknowledge.set_userid(sockfd); //hay que cambiarlo para que sea dinamico
     clientAcknowledge.set_allocated_acknowledge(infoAck);
     // Se serializa el message a string
     string binarya;

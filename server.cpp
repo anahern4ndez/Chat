@@ -274,6 +274,13 @@ void *client_thread(void *params)
                     ErrorToClient(socketFd, "Failed to Synchronize");
                     exit(0);
                 }
+
+                if(clients.count(clientMessage.synchronize().username()) > 0)
+                {
+                    std::cout << "Trying to synch a user with username duplicated" << std::endl;
+                    ErrorToClient(socketFd, "Username already exists in server.");
+                    goto loop;
+                }
                 
                 thisClient.username = clientMessage.synchronize().username();
                 thisClient.status = "Activo";
@@ -305,6 +312,9 @@ void *client_thread(void *params)
                 thisClient.received_messages = init_queue();
                 thisClient.sent_messages = init_queue();
                 thisClient.userid = clientMessage.userid();
+                thisClient.status = "Activo";
+                thisClient.username = clientMessage.synchronize().username();
+                
                 //agregar nuevo cliente al map de clientes
                 std::pair<std::string, Client*> nclient (clientMessage.synchronize().username(), &thisClient);
                 clients.insert(nclient);
@@ -326,17 +336,13 @@ void *client_thread(void *params)
                     ConnectedUserResponse *response = new ConnectedUserResponse();
                     for (auto user = clients.begin(); user != clients.end(); ++user)
                     {
-                        if (user->first != thisClient.username)
-                        {
-                            Client *info = user->second;
-                            ConnectedUser *user_info =  new ConnectedUser();
-                            user_info->set_username(user->first);
-                            user_info->set_status(info->status);
-                            user_info->set_userid(info->userid);
-                            user_info->set_ip(info->ip_address);
-                            user_info = response->add_connectedusers();
-                        }
+                            if(user->first != thisClient.username){
+                                ConnectedUser *user_info =  response->add_connectedusers();
+                                user_info->set_username(user->first);
+                            }                        
                     }
+
+                    serverMessage.Clear();
                     serverMessage.set_option(ServerOpt::C_USERS_RESPONSE);
                     serverMessage.set_allocated_connecteduserresponse(response);
                     serverMessage.SerializeToString(&msgSerialized);
@@ -344,8 +350,7 @@ void *client_thread(void *params)
                     char cstr[msgSerialized.size() + 1];
                     strcpy(cstr, msgSerialized.c_str());
                     send(socketFd, cstr, msgSerialized.size() + 1, 0);
-                }
-                else {
+                } else if(clientMessage.connectedusers().has_username()) {
                     std::unordered_map<std::string, Client *>::const_iterator recipient;
                     std::string recipient_username;
                     if (clientMessage.connectedusers().has_username()){
@@ -356,21 +361,14 @@ void *client_thread(void *params)
                             goto loop;
                         }
                     }
-                    else { //si se envio un userid
-                        if((recipient_username = find_by_id(clientMessage.connectedusers().userid(), thisClient.username)) == ""){
-                            ErrorToClient(socketFd, "UserID not found. ");
-                            goto loop;
-                        }
-                        recipient = clients.find(recipient_username);
-                    }
                     Client *info = recipient->second;
-                    ConnectedUser *user_info =  new ConnectedUser();
+                    ConnectedUserResponse *response = new ConnectedUserResponse();
+                    ConnectedUser *user_info =  response->add_connectedusers();
                     user_info->set_username(recipient->first);
                     user_info->set_status(info->status);
                     user_info->set_userid(info->userid);
                     user_info->set_ip(info->ip_address);
-                    ConnectedUserResponse *response = new ConnectedUserResponse();
-                    user_info = response->add_connectedusers();
+                
                     serverMessage.set_option(ServerOpt::C_USERS_RESPONSE);
                     serverMessage.set_allocated_connecteduserresponse(response);
                     serverMessage.SerializeToString(&msgSerialized);

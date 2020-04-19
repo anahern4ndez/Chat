@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <algorithm>
+#include <sstream>
 #include <vector>
 #include "mensaje.pb.h"
 using namespace std;
@@ -19,6 +20,7 @@ vector<int> chatsDirectos;
 
 pthread_t listen_client;
 pthread_t options_client;
+
 
 // opciones de mensaje para el cliente
 enum ClientOpt {
@@ -47,37 +49,11 @@ void error(const char *msg)
     exit(0);
 }
 
-void *listen_thread_DM(void *params){
-    int socketFd = *(int *)params;
-    char buffer[8192];
-    string msgSerialized;
-    ClientMessage clientMessage;
-    ClientMessage clientAcknowledge;
-    ServerMessage serverMessage;
 
-    cout << "Thread for hearing responses of new DM created" << endl;
-
-    loop: while (1)  
-    {
-        recv(socketFd, buffer, 8192, 0);
-        // recepcion y parse de mensaje del server
-        serverMessage.ParseFromString(buffer);
-        
-        if (serverMessage.option() == ServerOpt::MESSAGE){
-            // printf("Message received from user with ID %d\n \t-->>%s", serverMessage.message().userid(), serverMessage.message().message().c_str());
-            cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
-            cout << "\t --> " << serverMessage.message().message().c_str() << endl;
-        }
-
-        serverMessage.Clear();
-    }
-    close(socketFd);
-    pthread_exit(0);
-}
 
 void *listen_thread(void *params){
     int socketFd = *(int *)params;
-    char buffer[8192];
+    char buffer[MAX_BUFFER];
     string msgSerialized;
     ClientMessage clientMessage;
     ClientMessage clientAcknowledge;
@@ -87,7 +63,7 @@ void *listen_thread(void *params){
 
     loop: while (1)
     {
-        int bytes_received = recv(socketFd, buffer, 8192, 0);
+        int bytes_received = recv(socketFd, buffer, MAX_BUFFER, 0);
         // recepcion y parse de mensaje del server
         if (bytes_received > 0){
             serverMessage.ParseFromString(buffer);
@@ -95,29 +71,6 @@ void *listen_thread(void *params){
             if(serverMessage.option() == ServerOpt::BROADCAST_S){
                 cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
                 cout << "\t --> " << serverMessage.broadcast().message().c_str() << endl;
-            }
-            else if(serverMessage.option() == ServerOpt::MESSAGE){
-                // Se verifica si el id del emisor aun no ha creado un thread de DM con el cliente
-                //pthread_t listen_client_DirectM;
-                //if (!(std::find(chatsDirectos.begin(), chatsDirectos.end(), serverMessage.message().userid()) != chatsDirectos.end())) {
-                    // Se agrega el ID del emisor a un vector de chats directos que ya se abrieron
-                    //chatsDirectos.push_back(serverMessage.message().userid());
-                    // La primera vez se recibe el mensaje en este thread
-                    cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
-                    cout << "\t --> " << serverMessage.message().message().c_str() << endl;
-                    // Se crea el thread de DM para el nuevo emisor
-
-
-                    //if (pthread_create(&listen_client_DirectM, NULL, listen_thread_DM, (void *)&socketFd))
-                    //{
-                        //cout << "Error: unable to create DM Thread." << endl;
-                        //exit(-1);
-                    //}
-                    //printf("aqui si");
-                    //pthread_detach(listen_client_DirectM); 
-                    //printf("Ya no llega aqui");
-                //}
-                
             }
             else if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
             {
@@ -128,8 +81,7 @@ void *listen_thread(void *params){
             } else if (serverMessage.option() == ServerOpt::CHANGE_STATUS)
             {
                 cout << "Server change status correctly" << endl;
-                cout << "Message:" << serverMessage.changestatusresponse().status() << endl;
-            
+    
             } 
             else if(serverMessage.option() == ServerOpt::DM_RESPONSE){
                 if(serverMessage.directmessageresponse().messagestatus() == "SENT"){
@@ -137,8 +89,25 @@ void *listen_thread(void *params){
                 }
                 else
                     cout << "Failed to send message." << endl;
-            }
-            else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
+            } else if (serverMessage.option() == ServerOpt::MESSAGE)
+            {
+                cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
+                cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+            } else if (serverMessage.option() == ServerOpt::C_USERS_RESPONSE)
+            {
+                if((serverMessage.connecteduserresponse().connectedusers_size()) != 0){
+                    cout << "Users connected in chat are: " << endl;
+                    cout << "Users connected: " << serverMessage.connecteduserresponse().connectedusers_size() << endl;
+                    for (int i = 0; i < serverMessage.connecteduserresponse().connectedusers_size(); i++) {
+                        ConnectedUser tmpUser = serverMessage.connecteduserresponse().connectedusers(i);
+                        cout << "USERNAME: " << tmpUser.username() << endl;
+                        cout << "----------------------------------" << endl;
+                    }
+                } else {
+                    cout << "No users connected in the chat" << endl;
+                }
+
+            } else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
             {
                 cout << "Server response with an error: " << serverMessage.error().errormessage() << endl;
                 goto loop;
@@ -154,6 +123,23 @@ void *listen_thread(void *params){
         }
     }
     pthread_exit(0);
+}
+
+string getUsername(string input){
+    istringstream inputStream(input);
+    string username;
+    inputStream >> username;
+
+    return username;
+}
+
+string getMessage(string input, string toErase) {
+    size_t pos = input.find(toErase);
+
+    if (pos != string::npos) 
+        input.erase (pos, toErase.length() + 1);
+
+    return input;
 }
 
 void broadCast(char buffer[], int sockfd, string message){
@@ -178,7 +164,6 @@ void directMS(int sockfd, string message, string recipient_username){
     ClientMessage clientMessage;
     DirectMessageRequest *directMsRequest = new DirectMessageRequest();
     directMsRequest->set_message(message);
-    directMsRequest->set_userid(1);
     directMsRequest->set_username(recipient_username);
     clientMessage.set_option(ClientOpt::DM);
     clientMessage.set_userid(sockfd);
@@ -215,13 +200,40 @@ void changeStatus(string status, int sockfd){
 }
 
 void connectedUsers(char buffer[], int socketfd){
+    string binary;
+    ClientMessage ClientMessage;
 
+    connectedUserRequest *usersRequest = new connectedUserRequest();
+    ClientMessage.set_option(ClientOpt::CONNECTED_USERS);
+    usersRequest->set_userid(0);
+    ClientMessage.set_allocated_connectedusers(usersRequest);
+    ClientMessage.SerializeToString(&binary);
+    char cstr[binary.size() + 1];
+    strcpy(cstr, binary.c_str());
+    send(socketfd, cstr, strlen(cstr), 0);
+    printf("Sending connected user Request to server \n");
+}
+
+void requestUserIfo(int socketfd, string username){
+    string binary;
+    ClientMessage ClientMessage;
+
+    connectedUserRequest *usersRequest = new connectedUserRequest();
+    ClientMessage.set_option(ClientOpt::CONNECTED_USERS);
+    usersRequest->set_username(username);
+    ClientMessage.set_allocated_connectedusers(usersRequest);
+    ClientMessage.SerializeToString(&binary);
+    char cstr[binary.size() + 1];
+    strcpy(cstr, binary.c_str());
+    send(socketfd, cstr, strlen(cstr), 0);
+    printf("Sending connected user Request to server \n");
+    
 }
 
 void *options_thread(void *args)
 {
     int option;
-    char buffer[8192];
+    char buffer[MAX_BUFFER];
     int socketFd = *(int *)args;
     int status;
     string newStatus;
@@ -231,18 +243,21 @@ void *options_thread(void *args)
 
     while (1)
     {
-        printf("2. See ConnectedUsers \n");
-        printf("4. Broadcast\n");
-        printf("5. Change Status\n");
-        printf("6. Direct Message\n");
+        printf("1.. Broadcast\n");
+        printf("2. Direct Message\n");
+        printf("3. Change Status\n");
+        printf("4. See ConnectedUsers \n");
+        printf("5. Request Information of a User\n");
+        printf("6. Info\n");
         printf("7. Exit\n");
         cin >> option;
-        if (option == 4){
+        if (option == 1){
             cin.ignore();
             printf("Enter the message you want to send: ");
             std::getline(cin, message);
             broadCast(buffer, socketFd, message);
-        } else if (option == 5){
+            sleep(3);
+        } else if (option == 3){
             cin.ignore();
             do {
                 printf("Escoge un estado\n");
@@ -275,31 +290,42 @@ void *options_thread(void *args)
             } while (status != -1);
             sleep(3);
 
-        } else if (option == 6){
+        } else if (option == 2){
             cin.ignore();
-            printf("Enter the message you want to send: ");
+            printf("Users Available in Chat: \n");
+            connectedUsers(buffer, socketFd);
+            sleep(5);
+            printf("Type your message in the format <username> <message> ");
             getline(cin, directMessage);
-            // cin.ignore();
-            printf("Enter the username of the receiver: ");
-            cin >> recipient_username;
-            // cin.ignore();
-            directMS(socketFd, directMessage, recipient_username);
+            recipient_username = getUsername(directMessage);
+            string message = getMessage(directMessage, recipient_username);
+
+            directMS(socketFd, message, recipient_username);
+            sleep(3);
         } 
         else if (option == 7){
             memset(&buffer[0], 0, sizeof(buffer)); //clear buffer
             send(socketFd, NULL, 0, 0); //enviar mensaje vacio para notificar al servidor
             pthread_cancel(listen_client); //request para que el otro thread termine
-            cout << "Goodbye!" << endl;
+            cout << "\nGoodbye!" << endl;
+            close(socketFd);
             pthread_exit(0);
-        }
-        else {
+            sleep(2);
+        } else if (option == 4){
+            connectedUsers(buffer, socketFd);
+            sleep(5);
+        } else if (option == 5){
+            string username;
+            connectedUsers(buffer, socketFd);
+            sleep(5);
+            printf("Enter the username of the user you want to request information: ");
+            cin >> username;
+            requestUserIfo(socketFd, username);
+        } else {
             cout << "Invalid option. " << endl;
         }
         
     }
-
-    // close(socketFd);
-    // pthread_exit(0);
     
 }
 
@@ -325,7 +351,7 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
     send(sockfd, cstr, strlen(cstr), 0 );
 
     // listen for server response
-    bzero(buffer,8192);
+    bzero(buffer,MAX_BUFFER);
     n = read(sockfd, buffer, 255);
     if (n < 0) 
          error("ERROR reading from socket");
@@ -362,7 +388,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     int option;
-    char buffer[8192];
+    char buffer[MAX_BUFFER];
     
     if (argc != 4) {
        fprintf(stderr, "./client [username] [host] [port]\n");
@@ -396,6 +422,5 @@ int main(int argc, char *argv[])
     
     pthread_join (listen_client, NULL);
     pthread_join (options_client, NULL);
-    // close(sockfd);
     return 0;
 }

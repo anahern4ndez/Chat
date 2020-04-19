@@ -437,6 +437,7 @@ void *client_thread(void *params)
                 BroadcastMessage *brdMsg = new BroadcastMessage();
                 brdMsg->set_message(brdReq.message());
                 brdMsg->set_userid(socketFd);
+                brdMsg->set_username(thisClient.username);
 
                 serverMessage.Clear();
                 serverMessage.set_option(ServerOpt::BROADCAST_S);
@@ -477,6 +478,7 @@ void *client_thread(void *params)
                 DirectMessage * dm(new DirectMessage);
                 dm->set_message(message_to_send);
                 dm->set_userid(socketFd);
+                dm->set_username(thisClient.username);
                 int recipient_fd = (recipient->second)->socketFd;
                 ServerMessage to_recipient;
                 to_recipient.set_option(ServerOpt::MESSAGE);

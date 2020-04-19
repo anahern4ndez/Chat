@@ -69,8 +69,16 @@ void *listen_thread(void *params){
             serverMessage.ParseFromString(buffer);
             
             if(serverMessage.option() == ServerOpt::BROADCAST_S){
-                cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
-                cout << "\t --> " << serverMessage.broadcast().message().c_str() << endl;
+                if(serverMessage.broadcast().has_username()){
+                    cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
+                    cout << serverMessage.broadcast().username() << ": " << serverMessage.broadcast().message().c_str() << endl;
+                } else if(serverMessage.broadcast().has_userid()){
+                    cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
+                    cout << "\t --> " << serverMessage.broadcast().message().c_str() << endl;
+                } else {
+                    cout << "No username or userid sent by server" << endl;
+                }
+
             }
             else if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
             {
@@ -91,8 +99,12 @@ void *listen_thread(void *params){
                     cout << "Failed to send message." << endl;
             } else if (serverMessage.option() == ServerOpt::MESSAGE)
             {
-                cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
-                cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+                if(serverMessage.message().has_username()){
+                    cout << serverMessage.message().username() << ": " << serverMessage.message.message.c_str() << endl;
+                } else {
+                    cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
+                    cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+                }
             } else if (serverMessage.option() == ServerOpt::C_USERS_RESPONSE)
             {
                 if((serverMessage.connecteduserresponse().connectedusers_size()) != 0){

@@ -446,7 +446,9 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_mensaje_2eproto::offsets[] PRO
   ~0u,  // no _weak_field_map_
   PROTOBUF_FIELD_OFFSET(::chat::BroadcastMessage, message_),
   PROTOBUF_FIELD_OFFSET(::chat::BroadcastMessage, userid_),
+  PROTOBUF_FIELD_OFFSET(::chat::BroadcastMessage, username_),
   0,
+  2,
   1,
   PROTOBUF_FIELD_OFFSET(::chat::DirectMessageRequest, _has_bits_),
   PROTOBUF_FIELD_OFFSET(::chat::DirectMessageRequest, _internal_metadata_),
@@ -473,7 +475,9 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_mensaje_2eproto::offsets[] PRO
   ~0u,  // no _weak_field_map_
   PROTOBUF_FIELD_OFFSET(::chat::DirectMessage, message_),
   PROTOBUF_FIELD_OFFSET(::chat::DirectMessage, userid_),
+  PROTOBUF_FIELD_OFFSET(::chat::DirectMessage, username_),
   0,
+  2,
   1,
   PROTOBUF_FIELD_OFFSET(::chat::ErrorResponse, _has_bits_),
   PROTOBUF_FIELD_OFFSET(::chat::ErrorResponse, _internal_metadata_),
@@ -538,13 +542,13 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 59, 66, sizeof(::chat::ChangeStatusResponse)},
   { 68, 74, sizeof(::chat::BroadcastRequest)},
   { 75, 81, sizeof(::chat::BroadcastResponse)},
-  { 82, 89, sizeof(::chat::BroadcastMessage)},
-  { 91, 99, sizeof(::chat::DirectMessageRequest)},
-  { 102, 108, sizeof(::chat::DirectMessageResponse)},
-  { 109, 116, sizeof(::chat::DirectMessage)},
-  { 118, 124, sizeof(::chat::ErrorResponse)},
-  { 125, 138, sizeof(::chat::ClientMessage)},
-  { 146, 160, sizeof(::chat::ServerMessage)},
+  { 82, 90, sizeof(::chat::BroadcastMessage)},
+  { 93, 101, sizeof(::chat::DirectMessageRequest)},
+  { 104, 110, sizeof(::chat::DirectMessageResponse)},
+  { 111, 119, sizeof(::chat::DirectMessage)},
+  { 122, 128, sizeof(::chat::ErrorResponse)},
+  { 129, 142, sizeof(::chat::ClientMessage)},
+  { 150, 164, sizeof(::chat::ServerMessage)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -581,32 +585,33 @@ const char descriptor_table_protodef_mensaje_2eproto[] PROTOBUF_SECTION_VARIABLE
   "tatusResponse\022\016\n\006userId\030\001 \002(\005\022\016\n\006status\030"
   "\002 \002(\t\"#\n\020BroadcastRequest\022\017\n\007message\030\001 \002"
   "(\t\"*\n\021BroadcastResponse\022\025\n\rmessageStatus"
-  "\030\001 \002(\t\"3\n\020BroadcastMessage\022\017\n\007message\030\001 "
-  "\002(\t\022\016\n\006userId\030\002 \002(\005\"I\n\024DirectMessageRequ"
-  "est\022\017\n\007message\030\001 \002(\t\022\016\n\006userId\030\002 \001(\005\022\020\n\010"
-  "username\030\003 \001(\t\".\n\025DirectMessageResponse\022"
-  "\025\n\rmessageStatus\030\001 \002(\t\"0\n\rDirectMessage\022"
-  "\017\n\007message\030\001 \002(\t\022\016\n\006userId\030\002 \002(\005\"%\n\rErro"
-  "rResponse\022\024\n\014errorMessage\030\001 \002(\t\"\316\002\n\rClie"
-  "ntMessage\022\016\n\006option\030\001 \002(\005\022\016\n\006userId\030\002 \001("
-  "\005\022,\n\013synchronize\030\003 \001(\0132\027.chat.MyInfoSync"
-  "hronize\0222\n\016connectedUsers\030\004 \001(\0132\032.chat.c"
-  "onnectedUserRequest\022/\n\014changeStatus\030\005 \001("
-  "\0132\031.chat.ChangeStatusRequest\022)\n\tbroadcas"
-  "t\030\006 \001(\0132\026.chat.BroadcastRequest\0221\n\rdirec"
-  "tMessage\030\007 \001(\0132\032.chat.DirectMessageReque"
-  "st\022,\n\013acknowledge\030\010 \001(\0132\027.chat.MyInfoAck"
-  "nowledge\"\250\003\n\rServerMessage\022\016\n\006option\030\001 \002"
-  "(\005\022)\n\tbroadcast\030\002 \001(\0132\026.chat.BroadcastMe"
-  "ssage\022$\n\007message\030\003 \001(\0132\023.chat.DirectMess"
-  "age\022\"\n\005error\030\004 \001(\0132\023.chat.ErrorResponse\022"
-  ",\n\016myInfoResponse\030\005 \001(\0132\024.chat.MyInfoRes"
-  "ponse\022:\n\025connectedUserResponse\030\006 \001(\0132\033.c"
-  "hat.ConnectedUserResponse\0228\n\024changeStatu"
-  "sResponse\030\007 \001(\0132\032.chat.ChangeStatusRespo"
-  "nse\0222\n\021broadcastResponse\030\010 \001(\0132\027.chat.Br"
-  "oadcastResponse\022:\n\025directMessageResponse"
-  "\030\t \001(\0132\033.chat.DirectMessageResponse"
+  "\030\001 \002(\t\"E\n\020BroadcastMessage\022\017\n\007message\030\001 "
+  "\002(\t\022\016\n\006userId\030\002 \002(\005\022\020\n\010username\030\003 \001(\t\"I\n"
+  "\024DirectMessageRequest\022\017\n\007message\030\001 \002(\t\022\016"
+  "\n\006userId\030\002 \001(\005\022\020\n\010username\030\003 \001(\t\".\n\025Dire"
+  "ctMessageResponse\022\025\n\rmessageStatus\030\001 \002(\t"
+  "\"B\n\rDirectMessage\022\017\n\007message\030\001 \002(\t\022\016\n\006us"
+  "erId\030\002 \002(\005\022\020\n\010username\030\003 \001(\t\"%\n\rErrorRes"
+  "ponse\022\024\n\014errorMessage\030\001 \002(\t\"\316\002\n\rClientMe"
+  "ssage\022\016\n\006option\030\001 \002(\005\022\016\n\006userId\030\002 \001(\005\022,\n"
+  "\013synchronize\030\003 \001(\0132\027.chat.MyInfoSynchron"
+  "ize\0222\n\016connectedUsers\030\004 \001(\0132\032.chat.conne"
+  "ctedUserRequest\022/\n\014changeStatus\030\005 \001(\0132\031."
+  "chat.ChangeStatusRequest\022)\n\tbroadcast\030\006 "
+  "\001(\0132\026.chat.BroadcastRequest\0221\n\rdirectMes"
+  "sage\030\007 \001(\0132\032.chat.DirectMessageRequest\022,"
+  "\n\013acknowledge\030\010 \001(\0132\027.chat.MyInfoAcknowl"
+  "edge\"\250\003\n\rServerMessage\022\016\n\006option\030\001 \002(\005\022)"
+  "\n\tbroadcast\030\002 \001(\0132\026.chat.BroadcastMessag"
+  "e\022$\n\007message\030\003 \001(\0132\023.chat.DirectMessage\022"
+  "\"\n\005error\030\004 \001(\0132\023.chat.ErrorResponse\022,\n\016m"
+  "yInfoResponse\030\005 \001(\0132\024.chat.MyInfoRespons"
+  "e\022:\n\025connectedUserResponse\030\006 \001(\0132\033.chat."
+  "ConnectedUserResponse\0228\n\024changeStatusRes"
+  "ponse\030\007 \001(\0132\032.chat.ChangeStatusResponse\022"
+  "2\n\021broadcastResponse\030\010 \001(\0132\027.chat.Broadc"
+  "astResponse\022:\n\025directMessageResponse\030\t \001"
+  "(\0132\033.chat.DirectMessageResponse"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_mensaje_2eproto_deps[1] = {
 };
@@ -632,7 +637,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_men
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_mensaje_2eproto_once;
 static bool descriptor_table_mensaje_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_mensaje_2eproto = {
-  &descriptor_table_mensaje_2eproto_initialized, descriptor_table_protodef_mensaje_2eproto, "mensaje.proto", 1555,
+  &descriptor_table_mensaje_2eproto_initialized, descriptor_table_protodef_mensaje_2eproto, "mensaje.proto", 1591,
   &descriptor_table_mensaje_2eproto_once, descriptor_table_mensaje_2eproto_sccs, descriptor_table_mensaje_2eproto_deps, 17, 0,
   schemas, file_default_instances, TableStruct_mensaje_2eproto::offsets,
   file_level_metadata_mensaje_2eproto, 17, file_level_enum_descriptors_mensaje_2eproto, file_level_service_descriptors_mensaje_2eproto,
@@ -3019,6 +3024,9 @@ class BroadcastMessage::_Internal {
     (*has_bits)[0] |= 1u;
   }
   static void set_has_userid(HasBits* has_bits) {
+    (*has_bits)[0] |= 4u;
+  }
+  static void set_has_username(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
 };
@@ -3037,6 +3045,10 @@ BroadcastMessage::BroadcastMessage(const BroadcastMessage& from)
   if (from._internal_has_message()) {
     message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
   }
+  username_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (from._internal_has_username()) {
+    username_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.username_);
+  }
   userid_ = from.userid_;
   // @@protoc_insertion_point(copy_constructor:chat.BroadcastMessage)
 }
@@ -3044,6 +3056,7 @@ BroadcastMessage::BroadcastMessage(const BroadcastMessage& from)
 void BroadcastMessage::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BroadcastMessage_mensaje_2eproto.base);
   message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  username_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   userid_ = 0;
 }
 
@@ -3054,6 +3067,7 @@ BroadcastMessage::~BroadcastMessage() {
 
 void BroadcastMessage::SharedDtor() {
   message_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  username_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void BroadcastMessage::SetCachedSize(int size) const {
@@ -3072,8 +3086,13 @@ void BroadcastMessage::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    message_.ClearNonDefaultToEmptyNoArena();
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      message_.ClearNonDefaultToEmptyNoArena();
+    }
+    if (cached_has_bits & 0x00000002u) {
+      username_.ClearNonDefaultToEmptyNoArena();
+    }
   }
   userid_ = 0;
   _has_bits_.Clear();
@@ -3104,6 +3123,17 @@ const char* BroadcastMessage::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_userid(&has_bits);
           userid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional string username = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+          auto str = _internal_mutable_username();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          #ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "chat.BroadcastMessage.username");
+          #endif  // !NDEBUG
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -3146,9 +3176,19 @@ failure:
   }
 
   // required int32 userId = 2;
-  if (cached_has_bits & 0x00000002u) {
+  if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(2, this->_internal_userid(), target);
+  }
+
+  // optional string username = 3;
+  if (cached_has_bits & 0x00000002u) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->_internal_username().data(), static_cast<int>(this->_internal_username().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+      "chat.BroadcastMessage.username");
+    target = stream->WriteStringMaybeAliased(
+        3, this->_internal_username(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -3183,7 +3223,7 @@ size_t BroadcastMessage::ByteSizeLong() const {
 // @@protoc_insertion_point(message_byte_size_start:chat.BroadcastMessage)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000005) ^ 0x00000005) == 0) {  // All required fields are present.
     // required string message = 1;
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
@@ -3200,6 +3240,14 @@ size_t BroadcastMessage::ByteSizeLong() const {
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
+
+  // optional string username = 3;
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000002u) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_username());
+  }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -3233,12 +3281,16 @@ void BroadcastMessage::MergeFrom(const BroadcastMessage& from) {
   (void) cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
-  if (cached_has_bits & 0x00000003u) {
+  if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
       message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
     }
     if (cached_has_bits & 0x00000002u) {
+      _has_bits_[0] |= 0x00000002u;
+      username_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.username_);
+    }
+    if (cached_has_bits & 0x00000004u) {
       userid_ = from.userid_;
     }
     _has_bits_[0] |= cached_has_bits;
@@ -3260,7 +3312,7 @@ void BroadcastMessage::CopyFrom(const BroadcastMessage& from) {
 }
 
 bool BroadcastMessage::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+  if ((_has_bits_[0] & 0x00000005) != 0x00000005) return false;
   return true;
 }
 
@@ -3269,6 +3321,8 @@ void BroadcastMessage::InternalSwap(BroadcastMessage* other) {
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   message_.Swap(&other->message_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
+  username_.Swap(&other->username_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
   swap(userid_, other->userid_);
 }
@@ -3803,6 +3857,9 @@ class DirectMessage::_Internal {
     (*has_bits)[0] |= 1u;
   }
   static void set_has_userid(HasBits* has_bits) {
+    (*has_bits)[0] |= 4u;
+  }
+  static void set_has_username(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
 };
@@ -3821,6 +3878,10 @@ DirectMessage::DirectMessage(const DirectMessage& from)
   if (from._internal_has_message()) {
     message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
   }
+  username_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (from._internal_has_username()) {
+    username_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.username_);
+  }
   userid_ = from.userid_;
   // @@protoc_insertion_point(copy_constructor:chat.DirectMessage)
 }
@@ -3828,6 +3889,7 @@ DirectMessage::DirectMessage(const DirectMessage& from)
 void DirectMessage::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DirectMessage_mensaje_2eproto.base);
   message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  username_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   userid_ = 0;
 }
 
@@ -3838,6 +3900,7 @@ DirectMessage::~DirectMessage() {
 
 void DirectMessage::SharedDtor() {
   message_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  username_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void DirectMessage::SetCachedSize(int size) const {
@@ -3856,8 +3919,13 @@ void DirectMessage::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    message_.ClearNonDefaultToEmptyNoArena();
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      message_.ClearNonDefaultToEmptyNoArena();
+    }
+    if (cached_has_bits & 0x00000002u) {
+      username_.ClearNonDefaultToEmptyNoArena();
+    }
   }
   userid_ = 0;
   _has_bits_.Clear();
@@ -3888,6 +3956,17 @@ const char* DirectMessage::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_userid(&has_bits);
           userid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional string username = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+          auto str = _internal_mutable_username();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          #ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "chat.DirectMessage.username");
+          #endif  // !NDEBUG
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -3930,9 +4009,19 @@ failure:
   }
 
   // required int32 userId = 2;
-  if (cached_has_bits & 0x00000002u) {
+  if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(2, this->_internal_userid(), target);
+  }
+
+  // optional string username = 3;
+  if (cached_has_bits & 0x00000002u) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->_internal_username().data(), static_cast<int>(this->_internal_username().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+      "chat.DirectMessage.username");
+    target = stream->WriteStringMaybeAliased(
+        3, this->_internal_username(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -3967,7 +4056,7 @@ size_t DirectMessage::ByteSizeLong() const {
 // @@protoc_insertion_point(message_byte_size_start:chat.DirectMessage)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000005) ^ 0x00000005) == 0) {  // All required fields are present.
     // required string message = 1;
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
@@ -3984,6 +4073,14 @@ size_t DirectMessage::ByteSizeLong() const {
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
+
+  // optional string username = 3;
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000002u) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_username());
+  }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -4017,12 +4114,16 @@ void DirectMessage::MergeFrom(const DirectMessage& from) {
   (void) cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
-  if (cached_has_bits & 0x00000003u) {
+  if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
       message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
     }
     if (cached_has_bits & 0x00000002u) {
+      _has_bits_[0] |= 0x00000002u;
+      username_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.username_);
+    }
+    if (cached_has_bits & 0x00000004u) {
       userid_ = from.userid_;
     }
     _has_bits_[0] |= cached_has_bits;
@@ -4044,7 +4145,7 @@ void DirectMessage::CopyFrom(const DirectMessage& from) {
 }
 
 bool DirectMessage::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+  if ((_has_bits_[0] & 0x00000005) != 0x00000005) return false;
   return true;
 }
 
@@ -4053,6 +4154,8 @@ void DirectMessage::InternalSwap(DirectMessage* other) {
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   message_.Swap(&other->message_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
+  username_.Swap(&other->username_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
   swap(userid_, other->userid_);
 }

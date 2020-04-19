@@ -39,7 +39,7 @@ enum ServerOpt {
     RESPONSE = 4,
     C_USERS_RESPONSE = 5,
     CHANGE_STATUS = 6,
-    BOADCAST_RESPONSE = 7,
+    BROADCAST_RESPONSE = 7,
     DM_RESPONSE = 8
 };
 /*
@@ -242,8 +242,7 @@ void *client_thread(void *params)
 
     std::cout << "Thread for client with socket: " << socketFd << std::endl;
 
-
-    while (1)
+    loop: while (1)
     {   
         memset(&buffer[0], 0, sizeof(buffer)); //clear buffer
         msgSerialized[0] = 0; //clear serialized variable
@@ -314,7 +313,7 @@ void *client_thread(void *params)
                 if (!clientMessage.has_connectedusers())
                 {
                     ErrorToClient(socketFd, "Failed to request connected users.");
-                    break;
+                    goto loop;
                 }
                 if(clientMessage.connectedusers().userid() == 0){ //si userid 0, se devuelven todos los usuarios
                     ConnectedUserResponse *response = new ConnectedUserResponse();
@@ -347,13 +346,13 @@ void *client_thread(void *params)
                         recipient = clients.find(recipient_username);
                         if (recipient == clients.end()){
                             ErrorToClient(socketFd, "Username not found.");
-                            break;
+                            goto loop;
                         }
                     }
                     else { //si se envio un userid
                         if((recipient_username = find_by_id(clientMessage.connectedusers().userid(), thisClient.username)) == ""){
                             ErrorToClient(socketFd, "UserID not found. ");
-                            break;
+                            goto loop;
                         }
                         recipient = clients.find(recipient_username);
                     }
@@ -380,7 +379,7 @@ void *client_thread(void *params)
                 if (!clientMessage.has_changestatus())
                 {
                     ErrorToClient(socketFd, "No Change Status Information sent by client");
-                    break;
+                    goto loop;
                 }
 
                 ChangeStatusRequest statusReq = clientMessage.changestatus();
@@ -411,7 +410,7 @@ void *client_thread(void *params)
                 if (!clientMessage.has_broadcast())
                 {
                     ErrorToClient(socketFd, "No Broadcast Information");
-                    break;
+                    goto loop;
                 }
 
                 BroadcastRequest brdReq = clientMessage.broadcast();
@@ -422,7 +421,7 @@ void *client_thread(void *params)
                 brdRes->set_messagestatus("Request accepted Sending Message...");
 
                 serverMessage.Clear();
-                serverMessage.set_option(ServerOpt::BOADCAST_RESPONSE);
+                serverMessage.set_option(ServerOpt::BROADCAST_RESPONSE);
                 serverMessage.set_allocated_broadcastresponse(brdRes);
                 serverMessage.SerializeToString(&msgSerialized);
 
@@ -453,13 +452,20 @@ void *client_thread(void *params)
 
             }
             else if (clientMessage.option() == ClientOpt::DM && can_connect){
+                // std::cout << clientMessage.SerializeAsString() << std::endl;
+                // std::cout << clientMessage.directmessage().SerializeAsString() << std::endl;
+                // std::cout << clientMessage.directmessage().has_username() << std::endl;
+                // std::cout << clientMessage.directmessage().has_userid() << std::endl;
+                std::cout << clientMessage.directmessage().username() << std::endl;
+                std::cout << clientMessage.userid() << std::endl;
+                std::cout << clientMessage.directmessage().message() << std::endl;
                 if(!clientMessage.has_directmessage()){
                     ErrorToClient(socketFd, "Error in DM");
-                    break;
+                    goto loop;
                 }
-                if(!clientMessage.directmessage().has_username() && !clientMessage.directmessage().userid()){
+                if(!clientMessage.directmessage().has_username() && !clientMessage.directmessage().has_userid()){
                     ErrorToClient(socketFd, "You must specify recipient's ID or username.");
-                    break;
+                    goto loop;
                 }
                 // const char *message_to_send = clientMessage.directmessage().message().c_str();
                 std::string message_to_send = clientMessage.directmessage().message();
@@ -467,12 +473,12 @@ void *client_thread(void *params)
                 std::unordered_map<std::string, Client *>::const_iterator recipient = clients.find(recipient_username);
                 if (recipient == clients.end()){
                     ErrorToClient(socketFd, "Username not found.");
-                    break;
+                    goto loop;
                 }
                 // intento de enviar mensaje a recipient
                 DirectMessage * dm(new DirectMessage);
                 dm->set_message(message_to_send);
-                dm->set_userid((recipient->second)->userid);
+                dm->set_userid(socketFd);
                 int recipient_fd = (recipient->second)->socketFd;
                 ServerMessage to_recipient;
                 to_recipient.set_option(ServerOpt::MESSAGE);
@@ -484,13 +490,13 @@ void *client_thread(void *params)
                 int success = send(recipient_fd, cstr, strlen(cstr), 0);
                 if(success < 0){
                     ErrorToClient(socketFd, "Failed to send DM.");
-                    break;
+                    goto loop;
                 }
                 memset(&cstr[0], 0, sizeof(cstr)); //clear buffer
                 msgSerialized[0] = 0; //clear serialized variable
                 // si es exitoso, mandar aviso a emisor 
                 DirectMessageResponse * dm_response(new DirectMessageResponse);
-                dm_response->set_messagestatus("MESSAGE SENT");
+                dm_response->set_messagestatus("SENT");
                 ServerMessage to_sender;
                 to_sender.set_option(ServerOpt::DM_RESPONSE);
                 to_sender.set_allocated_directmessageresponse(dm_response);
@@ -509,7 +515,7 @@ void *client_thread(void *params)
     clients.erase(thisClient.username);
     close(socketFd);
   
-    std::cout << "Closing socket"<< std::endl;
+    std::cout << "Closing socket " << socketFd << std::endl;
     pthread_exit(0);
 }
 

@@ -100,7 +100,7 @@ void *listen_thread(void *params){
             } else if (serverMessage.option() == ServerOpt::MESSAGE)
             {
                 if(serverMessage.message().has_username()){
-                    cout << serverMessage.message().username() << ": " << serverMessage.message.message.c_str() << endl;
+                    cout << serverMessage.message().username() << ": " << serverMessage.message().message().c_str() << endl;
                 } else {
                     cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
                     cout << "\t --> " << serverMessage.message().message().c_str() << endl;
@@ -352,6 +352,7 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
     // Se crea instancia de Mensaje, se setea los valores deseados
     ClientMessage clientMessage;
     clientMessage.set_option(ClientOpt::SYNC);
+    clientMessage.set_userid(sockfd);
     clientMessage.set_allocated_synchronize(clientInfo);
 
     // Se serializa el message a string

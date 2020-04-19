@@ -11,6 +11,15 @@
 #include <sstream>
 #include <vector>
 #include "mensaje.pb.h"
+
+# define DEFAULT "\033[0m"
+# define MAGENTA "\033[35m"      
+# define RED     "\033[31m"    
+# define BLUE    "\033[34m"      
+# define GREEN   "\033[32m"      
+# define YELLOW  "\033[33m"      
+# define BOLDBLACK   "\033[1m\033[30m"          
+ 
 using namespace std;
 using namespace chat;
 
@@ -70,68 +79,65 @@ void *listen_thread(void *params){
             
             if(serverMessage.option() == ServerOpt::BROADCAST_S){
                 if(serverMessage.broadcast().has_username()){
-                    cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
-                    cout << serverMessage.broadcast().username() << ": " << serverMessage.broadcast().message().c_str() << endl;
+                    cout << "From: " << BLUE << serverMessage.broadcast().username() << DEFAULT << GREEN << "To Everyone" << DEFAULT << endl;
+                    cout << serverMessage.broadcast().message().c_str() << endl;
                 } else if(serverMessage.broadcast().has_userid()){
-                    cout << "Message received from user with ID " << serverMessage.broadcast().userid() << endl;
-                    cout << "\t --> " << serverMessage.broadcast().message().c_str() << endl;
+                    cout << "From: " << BLUE << serverMessage.broadcast().userid() << DEFAULT << GREEN << "To Everyone" << DEFAULT << endl;
+                    cout << serverMessage.broadcast().message().c_str() << endl;
                 } else {
-                    cout << "No username or userid sent by server" << endl;
+                    cout << RED << "No username or userid sent by server" << DEFAULT << endl;
                 }
 
             }
             else if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
             {
-                cout << "Server response: " << endl;
-                cout << "Option: " << serverMessage.option() << endl;
-                cout << "Message:" << serverMessage.broadcastresponse().messagestatus() << endl;
-
+                cout << BOLDBLACK << "Server response: " << serverMessage.broadcastresponse().messagestatus() << DEFAULT << endl;
+               
             } else if (serverMessage.option() == ServerOpt::CHANGE_STATUS)
             {
-                cout << "Server change status correctly" << endl;
+                cout << BOLDBLACK << "Server change status correctly" << DEFAULT << endl;
     
             } 
             else if(serverMessage.option() == ServerOpt::DM_RESPONSE){
-                if(serverMessage.directmessageresponse().messagestatus() == "SENT"){
-                    cout << "Message sent successfully!" << endl;
-                }
+                if(serverMessage.directmessageresponse().messagestatus() == "SENT")
+                    cout << MAGENTA << "Message sent successfully!" << DEFAULT << endl;
                 else
-                    cout << "Failed to send message." << endl;
+                    cout << RED << "Failed to send message." << endl;
             } else if (serverMessage.option() == ServerOpt::MESSAGE)
             {
                 if(serverMessage.message().has_username()){
-                    cout << serverMessage.message().username() << ": " << serverMessage.message().message().c_str() << endl;
+                    cout << "From: " << BLUE << 
+                    serverMessage.message().username() << DEFAULT << YELLOW << "(In Private): " << DEFAULT << endl;
+                    cout << serverMessage.message().message().c_str() << endl;
                 } else {
-                    cout << "Message received from user with ID " <<serverMessage.message().userid() << endl;
-                    cout << "\t --> " << serverMessage.message().message().c_str() << endl;
+                    cout << "From: " << BLUE << serverMessage.message().userid() << DEFAULT << YELLOW << "(In Private):" << DEFAULT << endl;
+                    cout << serverMessage.message().message().c_str() << endl;
                 }
             } else if (serverMessage.option() == ServerOpt::C_USERS_RESPONSE)
             {
                 
                 if((serverMessage.connecteduserresponse().connectedusers_size()) != 0){
-                    cout << "Users connected in chat are: " << endl;
+                    cout << BOLDBLACK << "Users connected in chat are: " << DEFAULT << endl;
                     cout << "Users connected: " << serverMessage.connecteduserresponse().connectedusers_size() << endl;
                     for (int i = 0; i < serverMessage.connecteduserresponse().connectedusers_size(); i++) {
                         ConnectedUser tmpUser = serverMessage.connecteduserresponse().connectedusers(i);
                         cout << "USERNAME: " << tmpUser.username() << endl;
-                        cout << "----------------------------------" << endl;
+                        if(tmpUser.has_userid()){
+                             cout << "ID: " << tmpUser.userid() << endl;
+                             cout << "STATUS: " << tmpUser.status() << endl;
+                             cout << "IP: " << tmpUser.ip() << endl;
+                        } else {
+                            cout << "----------------------------------" << endl;
+                        }
                     }
-                } else if(serverMessage.connecteduserresponse().connectedusers(0).has_userid()) {
-                    cout << "Information of user is: " << endl;
-                    for (int i = 0; i < serverMessage.connecteduserresponse().connectedusers_size(); i++) {
-                        ConnectedUser tmpUser = serverMessage.connecteduserresponse().connectedusers(i);
-                        cout << "USERNAME: " << tmpUser.username() << endl;
-                        cout << "ID: " << tmpUser.userid() << endl;
-                        cout << "STATUS: " << tmpUser.status() << endl;
-                        cout << "IP: " << tmpUser.ip() << endl;
-                    }
+          
                 } else {
-                    cout << "No users connected in the chat" << endl;
+                    cout << RED << "No users connected in the chat" << DEFAULT << endl;
                 }
 
             } else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
             {
-                cout << "Server response with an error: " << serverMessage.error().errormessage() << endl;
+                cout << RED << "Server response with an error: " << serverMessage.error().errormessage() << DEFAULT << endl;
                 if(serverMessage.error().errormessage() == "Failed to Synchronize")
                     exit(0);
                 else
@@ -150,11 +156,10 @@ void *listen_thread(void *params){
     pthread_exit(0);
 }
 
-string getUsername(string input){
+string getFirst(string input){
     istringstream inputStream(input);
     string username;
     inputStream >> username;
-
     return username;
 }
 
@@ -167,6 +172,13 @@ string getMessage(string input, string toErase) {
     return input;
 }
 
+void sendBySocket(string message, int sockfd){
+    char cstr[message.size() + 1];
+    strcpy(cstr, message.c_str());
+    // send to socket
+    send(sockfd, cstr, strlen(cstr), 0 );
+}
+
 void broadCast(char buffer[], int sockfd, string message){
     string binary;
     ClientMessage clientMessage;
@@ -176,12 +188,10 @@ void broadCast(char buffer[], int sockfd, string message){
     brdRequest->set_message(message);
     clientMessage.set_allocated_broadcast(brdRequest);
     clientMessage.SerializeToString(&binary);
-    // sending clientMessage to server
-    char cstr[binary.size() + 1];
-    strcpy(cstr, binary.c_str());
-    // send to socket
-    send(sockfd, cstr, strlen(cstr), 0 );
-    cout << "Sending broadcast request to server" <<endl;
+    sendBySocket(binary, sockfd);
+    cout << BOLDBLACK << "Sending broadcast request to server" << DEFAULT << endl;
+    cout << endl;
+
 }
 
 void directMS(int sockfd, string message, string recipient_username){
@@ -194,12 +204,10 @@ void directMS(int sockfd, string message, string recipient_username){
     clientMessage.set_userid(sockfd);
     clientMessage.set_allocated_directmessage(directMsRequest);
     clientMessage.SerializeToString(&binary);
-    // sending clientMessage to server
-    char cstr[binary.size() + 1];
-    strcpy(cstr, binary.c_str());
-    // send to socket
-    send(sockfd, cstr, strlen(cstr), 0 );
-    printf("Sending DM to %s by request to server\n", recipient_username.c_str());
+    sendBySocket(binary, sockfd);
+    cout << BOLDBLACK << "Sending DM to:" << DEFAULT << BLUE << recipient_username.c_str() << DEFAULT << endl;
+    cout << endl;
+
 }
 
 void changeStatus(string status, int sockfd){
@@ -216,11 +224,9 @@ void changeStatus(string status, int sockfd){
     clientMessage.set_allocated_changestatus(statusRequest);
     clientMessage.SerializeToString(&binary);
 
-    char cstr[binary.size() + 1];
-    strcpy(cstr, binary.c_str());
-
-    send(sockfd, cstr, strlen(cstr), 0);
-    printf("Sending change status request to server\n");
+    sendBySocket(binary, sockfd);
+    cout << BOLDBLACK << "Sending change status request to server" << DEFAULT << endl;
+    cout << endl;
 
 }
 
@@ -233,10 +239,10 @@ void connectedUsers(char buffer[], int socketfd){
     usersRequest->set_userid(0);
     ClientMessage.set_allocated_connectedusers(usersRequest);
     ClientMessage.SerializeToString(&binary);
-    char cstr[binary.size() + 1];
-    strcpy(cstr, binary.c_str());
-    send(socketfd, cstr, strlen(cstr), 0);
-    printf("Sending connected user Request to server \n");
+    sendBySocket(binary, socketfd);
+    cout << BOLDBLACK << "Sending connected user Request to server" << DEFAULT << endl;
+    cout << endl;
+    
 }
 
 void requestUserIfo(int socketfd, string username){
@@ -248,16 +254,15 @@ void requestUserIfo(int socketfd, string username){
     usersRequest->set_username(username);
     ClientMessage.set_allocated_connectedusers(usersRequest);
     ClientMessage.SerializeToString(&binary);
-    char cstr[binary.size() + 1];
-    strcpy(cstr, binary.c_str());
-    send(socketfd, cstr, strlen(cstr), 0);
-    printf("Sending connected user Request to server \n");
+    sendBySocket(binary, socketfd);
+    cout << BOLDBLACK << "Sending connected user Request to server" << DEFAULT << endl;
+    cout << endl;
     
 }
 
 void *options_thread(void *args)
 {
-    int option;
+    string input;
     char buffer[MAX_BUFFER];
     int socketFd = *(int *)args;
     int status;
@@ -265,70 +270,23 @@ void *options_thread(void *args)
     string message, directMessage, recipient_username;
     int idDestinatary;
     printf("Thread for sending requests to server created\n");
+    cout<<endl;
 
     while (1)
     {
-        printf("1. Broadcast a message\n");
-        printf("2. Direct Message someone\n");
-        printf("3. Change Status\n");
-        printf("4. See connected users \n");
-        printf("5. Request information of a user\n");
-        printf("6. Info\n");
-        printf("7. Exit\n");
-        cin >> option;
-        if (option == 1){
-            cin.ignore();
-            printf("Enter the message you want to send: ");
-            std::getline(cin, message);
+
+        getline(cin, input);
+
+        string action = getFirst(input);
+        string message = getMessage(input, action);
+
+        if (action == "broadcast"){
             broadCast(buffer, socketFd, message);
             sleep(3);
-        } else if (option == 3){
-            cin.ignore();
-            do {
-                printf("Escoge un estado\n");
-                printf("1. Activo\n");
-                printf("2. Ocupado\n");
-                printf("3. Inactivo\n");
-                cin >> status;
-                switch (status)
-                {
-                case 1:
-                    newStatus = "Activo";
-                    changeStatus(newStatus, socketFd);
-                    status = -1;
-                    break;
-                case 2:
-                    newStatus = "Ocupado";
-                    changeStatus(newStatus, socketFd);
-                    status = -1;
-                    break;
-                case 3:
-                    newStatus = "Inactivo";
-                    changeStatus(newStatus, socketFd);
-                    status = -1;
-                    break;
-                default:
-                    printf("Bad Option\n");
-                    break;
-                }
-
-            } while (status != -1);
+        } else if (action == "status"){
+            changeStatus(message, socketFd);
             sleep(3);
-
-        } else if (option == 2){
-            cin.ignore();
-            printf("Users Available in Chat: \n");
-            connectedUsers(buffer, socketFd);
-            sleep(5);
-            printf("Type your message in the format <username> <message> ");
-            getline(cin, directMessage);
-            recipient_username = getUsername(directMessage);
-            string message = getMessage(directMessage, recipient_username);
-
-            directMS(socketFd, message, recipient_username);
-            sleep(3);
-        } 
-        else if (option == 7){
+        } else if (action == "exit"){
             memset(&buffer[0], 0, sizeof(buffer)); //clear buffer
             send(socketFd, NULL, 0, 0); //enviar mensaje vacio para notificar al servidor
             pthread_cancel(listen_client); //request para que el otro thread termine
@@ -336,18 +294,31 @@ void *options_thread(void *args)
             close(socketFd);
             pthread_exit(0);
             sleep(2);
-        } else if (option == 4){
+        } else if (action == "users"){
+            printf("entro");
             connectedUsers(buffer, socketFd);
             sleep(5);
-        } else if (option == 5){
-            string username;
-            connectedUsers(buffer, socketFd);
-            sleep(5);
-            printf("Enter the username of the user you want to request information: ");
-            cin >> username;
-            requestUserIfo(socketFd, username);
+        } else if (action == "info" || action == ""){
+            cout << endl;
+            cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << endl;
+            cout << "* To send a broadcast message type: '<broadcast> <yourmessage>' *" << endl;
+            cout << "* To change status type: '<status> <newstatus>'                 *" << endl;
+            cout << "* To see all users connected type: '<users>'                    *" << endl;
+            cout << "* To see all the information of a user type: '<username>'       *" << endl;
+            cout << "* To send a direct message type: '<username> <yourmessage>'     *" << endl;
+            cout << "* To see information type: 'info'                               *" << endl;
+            cout << "* To exit type: 'exit'                                          *" << endl; 
+            cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl;
+            cout << endl;
+
         } else {
-            cout << "Invalid option. " << endl;
+            if(message == ""){
+                requestUserIfo(socketFd, action);
+            } else {
+                directMS(socketFd, message, action);
+                sleep(3);
+            }
+            
         }
         
     }
@@ -442,7 +413,7 @@ int main(int argc, char *argv[])
     synchUser(serv_addr, sockfd, buffer, argv);
     if (pthread_create(&listen_client, NULL, listen_thread, (void *)&sockfd) || pthread_create(&options_client, NULL, options_thread, (void *)&sockfd))
     {
-        cout << "Error: unable to create threads." << endl;
+        cout << RED << "Error: unable to create threads." << DEFAULT << endl;
         exit(-1);
     }
     

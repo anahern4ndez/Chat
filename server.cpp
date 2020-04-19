@@ -91,7 +91,6 @@ bool changeStatus;
 struct thread_params { chat_data *c_data; struct sockaddr_in *cli_addr; };
 
 std::unordered_map<std::string, Client *> clients;
-// chat_data data; // data global para todos los threads
 
 //se nombrarán las funciones aquí pero las implementaciones están de último
 void bind_socket(struct sockaddr_in serverAddr, int socketFd, long port);
@@ -145,7 +144,6 @@ int main(int argc, char *argv[])
     pthread_mutex_init(&data.client_queue_mutex, NULL);
     // // Se creara un nuevo thread para estar al tanto de recibir y mandar mensajes
     // // el thread actual (padre) quedara para escuchar nuevas conexiones 
-    // pthread_create(&messagesThread, NULL, message_thread, (void *)&data)
     // El socket actual queda abierto para nuevas conexiones, hasta que se les haga accept() quedan en cola, 
     // el número máximo de elementos en cola es QUEUE_MAX.
     if (listen(sockfd, QUEUE_MAX) == -1)
@@ -266,7 +264,6 @@ void *client_thread(void *params)
         if ((read_bytes = (recv(socketFd, buffer, MAX_BUFFER, 0))) > 0)
         {   
             clientMessage.ParseFromString(buffer); 
-            // std::cout << "NewRequestVal" << newRequest << std::endl;
 
             if (clientMessage.option() == ClientOpt::SYNC)
             {
@@ -474,7 +471,6 @@ void *client_thread(void *params)
                     ErrorToClient(socketFd, "You must specify recipient's ID or username.");
                     goto loop;
                 }
-                // const char *message_to_send = clientMessage.directmessage().message().c_str();
                 std::string message_to_send = clientMessage.directmessage().message();
                 std::string recipient_username = clientMessage.directmessage().username();
                 std::unordered_map<std::string, Client *>::const_iterator recipient = clients.find(recipient_username);
@@ -525,7 +521,6 @@ void *client_thread(void *params)
             pthread_exit(0);
 
         }
-        // std::cout << newRequest << std::endl;
         clientMessage.Clear(); // clear clientMessage
         newRequest = false;
     }
@@ -545,13 +540,7 @@ std::string find_by_id(int id, std::string sender_username){
     }
     return found_username;
 }
-/*
-    Metodo del thread handler para escuchar mensajes 
-*/
 
-// void *message_thread(void *params){
-
-// }
 message_queue* init_queue(void){
     message_queue *queue = (message_queue *)malloc(sizeof(message_queue));
     queue->empty = 1;
@@ -569,16 +558,12 @@ void *timer(void *params) {
     Client client = *(Client *) params;
     ServerMessage serverMessage;
     std::string msgSerialized;
-    // std::cout << client.socketFd <<" ID Cliente " << std::endl;
-    // float seconds = tiemposInactivos[client.userid];
 
-    // printf("Entro");
 
     while(1){
         if(tiemposInactivos[client.socketFd] < INACTIVE_TIME){
             sleep(1); 
             tiemposInactivos[client.socketFd]++;
-            // std::cout << seconds << std::endl;
             if(tiemposInactivos[client.socketFd] == INACTIVE_TIME){
                 client.status = "Inactivo";
                 ChangeStatusResponse *response = new ChangeStatusResponse();
@@ -596,7 +581,6 @@ void *timer(void *params) {
                 std::cout << "Sending update to client" << std::endl;
             }
         }
-        // std::cout << tiemposInactivos[client.socketFd] << std::endl;
     }
 
     pthread_exit(0);

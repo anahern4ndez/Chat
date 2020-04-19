@@ -293,7 +293,7 @@ void *client_thread(void *params)
                     // envio de response 
                 //response build 
                 MyInfoResponse * serverResponse(new MyInfoResponse); 
-                serverResponse->set_userid(1);
+                serverResponse->set_userid(socketFd);
 
                 serverMessage.Clear();
                 serverMessage.set_option(ServerOpt::RESPONSE);

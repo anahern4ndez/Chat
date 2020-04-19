@@ -352,6 +352,7 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
     // Se crea instancia de Mensaje, se setea los valores deseados
     ClientMessage clientMessage;
     clientMessage.set_option(ClientOpt::SYNC);
+    clientMessage.set_userid(sockfd);
     clientMessage.set_allocated_synchronize(clientInfo);
 
     // Se serializa el message a string

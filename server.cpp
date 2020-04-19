@@ -163,13 +163,12 @@ int main(int argc, char *argv[])
         send(user->second->socketFd, NULL, 0, 0);
     }
     //close all sockets & end all threads
+    pthread_cancel(listen_c_t);
     for(int i = 0; i< data.client_num; i++){
         close(data.connected_clients[i]);
         pthread_cancel(data.threads[i]);
     }
     std::cout << "Goodbye!" << std::endl;
-    //end of chat
-    pthread_cancel(listen_c_t);
     close(sockfd);
     pthread_mutex_destroy(&data.client_queue_mutex);
     google::protobuf::ShutdownProtobufLibrary();
@@ -563,12 +562,12 @@ void *timer(void *params) {
     ServerMessage serverMessage;
     std::string msgSerialized;
 
-    printf("Entro");
+    // printf("Entro");
 
     while(newRequest == false){
         sleep(1); 
         seconds++;
-        std::cout << seconds << std::endl;
+        // std::cout << seconds << std::endl;
         if(seconds >= INACTIVE_TIME){
             seconds = 0;
             client.status = "Inactivo";

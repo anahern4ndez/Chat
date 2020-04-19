@@ -147,6 +147,9 @@ void *listen_thread(void *params){
         }
         else {
             pthread_cancel(options_client); //request para que el otro thread termine
+            std::cout << "exiting" << endl;
+            // close(socketFd);
+            exit(0);
             pthread_exit(0);
         }
     }
@@ -295,8 +298,8 @@ void *options_thread(void *args)
         
     }
 
-    close(socketFd);
-    pthread_exit(0);
+    // close(socketFd);
+    // pthread_exit(0);
     
 }
 
@@ -384,17 +387,15 @@ int main(int argc, char *argv[])
     if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
         error("ERROR connecting");
 
-    cout << "connect" << endl;
-
     synchUser(serv_addr, sockfd, buffer, argv);
     if (pthread_create(&listen_client, NULL, listen_thread, (void *)&sockfd) || pthread_create(&options_client, NULL, options_thread, (void *)&sockfd))
     {
         cout << "Error: unable to create threads." << endl;
         exit(-1);
     }
-
+    
     pthread_join (listen_client, NULL);
     pthread_join (options_client, NULL);
-    close(sockfd);
+    // close(sockfd);
     return 0;
 }

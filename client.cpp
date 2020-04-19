@@ -144,9 +144,11 @@ void changeStatus(string status, int sockfd){
     ClientMessage clientMessage;
     ServerMessage serverResponseMsg;
 
+
     ChangeStatusRequest *statusRequest = new ChangeStatusRequest();
     clientMessage.set_option(ClientOpt::STATUS);
     statusRequest->set_status(status);
+
 
     clientMessage.set_allocated_changestatus(statusRequest);
     clientMessage.SerializeToString(&binary);
@@ -159,17 +161,24 @@ void changeStatus(string status, int sockfd){
 
 }
 
+void connectedUsers(char buffer[], int socketfd){
+
+}
+
 void *options_thread(void *args)
 {
     int option;
     char buffer[8192];
     int socketFd = *(int *)args;
-    string message, status, directMessage, recipient_username;
+    int status;
+    string newStatus;
+    string message, directMessage, recipient_username;
     int idDestinatary;
     printf("Thread for sending requests to server created\n");
 
     while (1)
     {
+        printf("2. See ConnectedUsers \n");
         printf("4. Broadcast\n");
         printf("5. Change Status\n");
         printf("6. Direct Message\n");
@@ -182,11 +191,37 @@ void *options_thread(void *args)
             broadCast(buffer, socketFd, message);
         } else if (option == 5){
             cin.ignore();
-            printf("Escoge un estado\n");
-            printf("Activo\n");
-            printf("Desconectado\n");
-            std::getline(cin, status);
-            changeStatus(status, socketFd);
+            do {
+                printf("Escoge un estado\n");
+                printf("1. Activo\n");
+                printf("2. Ocupado\n");
+                printf("3. Inactivo\n");
+                cin >> status;
+                switch (status)
+                {
+                case 1:
+                    newStatus = "Activo";
+                    changeStatus(newStatus, socketFd);
+                    status = -1;
+                    break;
+                case 2:
+                    newStatus = "Ocupado";
+                    changeStatus(newStatus, socketFd);
+                    status = -1;
+                    break;
+                case 3:
+                    newStatus = "Inactivo";
+                    changeStatus(newStatus, socketFd);
+                    status = -1;
+                    break;
+                default:
+                    printf("Bad Option\n");
+                    break;
+                }
+
+            } while (status != -1);
+            sleep(3);
+
         } else if (option == 6){
             cin.ignore();
             printf("Enter the message you want to send: ");
@@ -209,6 +244,9 @@ void *options_thread(void *args)
         }
         
     }
+
+    close(socketFd);
+    pthread_exit(0);
     
 }
 

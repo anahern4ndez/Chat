@@ -561,27 +561,31 @@ void *timer(void *params) {
 
 
     while(1){
-        if(tiemposInactivos[client.socketFd] < INACTIVE_TIME){
-            sleep(1); 
-            tiemposInactivos[client.socketFd]++;
-            if(tiemposInactivos[client.socketFd] == INACTIVE_TIME){
-                client.status = "Inactivo";
-                ChangeStatusResponse *response = new ChangeStatusResponse();
-                response->set_userid(client.socketFd);
-                response->set_status("Inactivo");
-                serverMessage.set_option(ServerOpt::CHANGE_STATUS);
-                serverMessage.set_allocated_changestatusresponse(response);
-                serverMessage.SerializeToString(&msgSerialized);
+        if(clients.find(client.username) != clients.end()){
+            if(tiemposInactivos[client.socketFd] < INACTIVE_TIME){
+                sleep(1); 
+                tiemposInactivos[client.socketFd]++;
+                if(tiemposInactivos[client.socketFd] == INACTIVE_TIME){
+                    client.status = "Inactivo";
+                    ChangeStatusResponse *response = new ChangeStatusResponse();
+                    response->set_userid(client.socketFd);
+                    response->set_status("Inactivo");
+                    serverMessage.set_option(ServerOpt::CHANGE_STATUS);
+                    serverMessage.set_allocated_changestatusresponse(response);
+                    serverMessage.SerializeToString(&msgSerialized);
 
-                // sendig message to client
-                char cstr[msgSerialized.size() + 1];
-                strcpy(cstr, msgSerialized.c_str());
-                send(client.socketFd, cstr, msgSerialized.size() + 1, 0);
-                std::cout << "Server changed status for:" << client.username << std::endl;
-                std::cout << "Sending update to client" << std::endl;
+                    // sendig message to client
+                    char cstr[msgSerialized.size() + 1];
+                    strcpy(cstr, msgSerialized.c_str());
+                    send(client.socketFd, cstr, msgSerialized.size() + 1, 0);
+                    std::cout << "Server changed status for:" << client.username << std::endl;
+                    std::cout << "Sending update to client" << std::endl;
+                }
             }
         }
+        else {
+            // std::cout << "Closing " << client.username << " timer." << std::endl;
+            pthread_exit(0);
+        }
     }
-
-    pthread_exit(0);
 }

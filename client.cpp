@@ -40,7 +40,8 @@ enum ClientOpt {
     CONNECTED_USERS = 2,
     STATUS = 3,
     BROADCAST_C =4,
-    DM = 5
+    DM = 5,
+    ACKNOWLEDGE = 6
 };
 // opciones de mensaje para el server
 enum ServerOpt {
@@ -378,7 +379,7 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], string i
     MyInfoAcknowledge * infoAck(new MyInfoAcknowledge);
     infoAck->set_userid(sockfd);
     ClientMessage clientAcknowledge; //no se como hacerle "clear" al clientmessage entonces creare otro :( 
-    clientAcknowledge.set_option(ClientOpt::SYNC);
+    clientAcknowledge.set_option(ClientOpt::ACKNOWLEDGE);
     clientAcknowledge.set_userid(sockfd); //hay que cambiarlo para que sea dinamico
     clientAcknowledge.set_allocated_acknowledge(infoAck);
     // Se serializa el message a string

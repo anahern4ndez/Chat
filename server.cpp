@@ -303,7 +303,7 @@ void *client_thread(void *params)
 
                 if(clients.count(clientMessage.synchronize().username()) > 0)
                 {
-                    std::cout << "Trying to sync a user with duplicatedusername. Closing socket "<<socketFd << "."<<std::endl;
+                    std::cout << "Trying to sync a user with duplicated username. Closing socket "<<socketFd << "."<<std::endl;
                     ErrorToClient(socketFd, "Username already exists in server.");
                     pthread_exit(0);
                 }

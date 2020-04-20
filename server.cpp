@@ -279,9 +279,9 @@ void *client_thread(void *params)
 
                 if(clients.count(clientMessage.synchronize().username()) > 0)
                 {
-                    std::cout << "Trying to sync a user with username duplicated. " << std::endl;
+                    std::cout << "Trying to sync a user with duplicatedusername. Closing socket "<<socketFd << "."<<std::endl;
                     ErrorToClient(socketFd, "Username already exists in server.");
-                    goto loop;
+                    pthread_exit(0);
                 }
                 
                 thisClient.username = clientMessage.synchronize().username();
@@ -307,7 +307,7 @@ void *client_thread(void *params)
                 recv(socketFd, buffer, MAX_BUFFER, 0);
                 clientAcknowledge.ParseFromString(buffer);
                 if(!clientAcknowledge.has_acknowledge()){
-                    ErrorToClient(socketFd, "Failed to Synchronize");
+                    ErrorToClient(socketFd, "Failed to Acknowledge");
                     pthread_exit(0);
                 }
                 thisClient.socketFd = socketFd;

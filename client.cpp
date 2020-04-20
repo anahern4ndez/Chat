@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <sstream>
 #include <vector>
+#include <errno.h> 
+#include <netdb.h>  
+#include <arpa/inet.h> 
 #include "mensaje.pb.h"
 
 # define DEFAULT "\033[0m"
@@ -138,7 +141,7 @@ void *listen_thread(void *params){
             } else if (serverMessage.option() == ServerOpt::ERROR && serverMessage.has_error())
             {
                 cout << RED << "Server response with an error: " << serverMessage.error().errormessage() << DEFAULT << endl;
-                if(serverMessage.error().errormessage() == "Failed to Synchronize")
+                if(serverMessage.error().errormessage() == "Failed to Synchronize" || serverMessage.error().errormessage() == "Failed to Acknowledge" )
                     exit(0);
                 else
                     goto loop;
@@ -273,9 +276,9 @@ void *options_thread(void *args)
     cout<<endl;
     cout << endl;
     cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << endl;
-    cout << "* To send a broadcast message type: 'broadcast <yourmessage>' *" << endl;
-    cout << "* To change status type: 'status <newstatus>'                 *" << endl;
-    cout << "* To see all users connected type: 'users'                    *" << endl;
+    cout << "* To send a broadcast message type: 'broadcast <yourmessage>'   *" << endl;
+    cout << "* To change status type: 'status <newstatus>'                   *" << endl;
+    cout << "* To see all users connected type: 'users'                      *" << endl;
     cout << "* To see all the information of a user type: '<username>'       *" << endl;
     cout << "* To send a direct message type: '<username> <yourmessage>'     *" << endl;
     cout << "* To see information type: 'info'                               *" << endl;
@@ -312,9 +315,9 @@ void *options_thread(void *args)
         } else if (action == "info" || action == ""){
             cout << endl;
             cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << endl;
-            cout << "* To send a broadcast message type: 'broadcast <yourmessage>' *" << endl;
-            cout << "* To change status type: 'status <newstatus>'                 *" << endl;
-            cout << "* To see all users connected type: 'users'                    *" << endl;
+            cout << "* To send a broadcast message type: 'broadcast <yourmessage>'   *" << endl;
+            cout << "* To change status type: 'status <newstatus>'                   *" << endl;
+            cout << "* To see all users connected type: 'users'                      *" << endl;
             cout << "* To see all the information of a user type: '<username>'       *" << endl;
             cout << "* To send a direct message type: '<username> <yourmessage>'     *" << endl;
             cout << "* To see information type: 'info'                               *" << endl;
@@ -336,28 +339,24 @@ void *options_thread(void *args)
     
 }
 
-void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *argv[]){
+void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], string ip, char *argv[]){
     int n;
     MyInfoSynchronize *clientInfo = new MyInfoSynchronize();
     clientInfo->set_username(argv[1]);
-    clientInfo->set_ip(argv[2]);
+    clientInfo->set_ip(ip);
     // Se crea instancia de Mensaje, se setea los valores deseados
     ClientMessage clientMessage;
     clientMessage.set_option(ClientOpt::SYNC);
     clientMessage.set_userid(sockfd);
     clientMessage.set_allocated_synchronize(clientInfo);
-
     // Se serializa el message a string
     string binary;
     clientMessage.SerializeToString(&binary);
-
     // envio de mensaje de cliente a server 
     char cstr[binary.size() + 1];
     strcpy(cstr, binary.c_str());
-
     // send to socket
     send(sockfd, cstr, strlen(cstr), 0 );
-
     // listen for server response
     bzero(buffer,MAX_BUFFER);
     n = read(sockfd, buffer, 255);
@@ -367,6 +366,10 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], char *ar
         //read server response
     ServerMessage serverResponseMsg;
     serverResponseMsg.ParseFromString(buffer);
+    if(serverResponseMsg.option() == ServerOpt::ERROR){
+        cout << RED << "Failed to establish connection to server. Exiting." << DEFAULT << endl;
+        exit(0);
+    }
     cout << "Server response: " << endl;
     cout << "Option: " << serverResponseMsg.option() << endl;
     cout << "User Id: " << serverResponseMsg.myinforesponse().userid() << endl;
@@ -420,8 +423,8 @@ int main(int argc, char *argv[])
     serv_addr.sin_port = htons(portno);
     if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
         error("ERROR connecting");
-
-    synchUser(serv_addr, sockfd, buffer, argv);
+    string ip(inet_ntoa(*((struct in_addr*) server->h_addr_list[0])));
+    synchUser(serv_addr, sockfd, buffer, ip, argv);
     if (pthread_create(&listen_client, NULL, listen_thread, (void *)&sockfd) || pthread_create(&options_client, NULL, options_thread, (void *)&sockfd))
     {
         cout << RED << "Error: unable to create threads." << DEFAULT << endl;

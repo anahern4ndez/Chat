@@ -34,12 +34,12 @@ These instructions will get you a copy of the project up and running on your loc
 - `./client [name] [username] [ipServer] [port]`
 - `./server [port]` If no port is provided the default is de 9999
 
-## Instruction client can execute
- - To send a broadcast message type: **'broadcast <yourmesssage>**   
- - To change status type: **'status <newstatus>'**             
+## Instructions client can execute
+ - To send a broadcast message type: **'broadcast yourmesssage'**   
+ - To change status type: **'status newstatus'**             
  - To see all users connected type: **'users'**                      
- - To see all the information of a user type: **'<username>'**      
- - To send a direct message type: **'<username> <yourmessage>'**
+ - To see all the information of a user type: **'username'**      
+ - To send a direct message type: **'username yourmessage'**
  - To see information type: **'info'**                             
  - To exit type: **'exit'**                                    
 

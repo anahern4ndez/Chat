@@ -13,36 +13,38 @@ A protocol was defined with objects for each option the client and server is cap
  5. Request information of a user
  6. Help
  7. Exit
+
 When the user has passed an amount of time without sending requests the server changes his status to inactive.
 
 ## Getting Started
 These instructions will get you a copy of the project up and running on your local machine for development.
 
 # Prerequisites
-You need to have Node.js and npm in your computer. 
-
--> For Windows users [download](https://nodejs.org/en/#home-downloadhead) the package manager <br />
--> For macOS users [download](https://nodejs.org/en/download/) the installer <br />
--> For Linux users [download](https://nodejs.org/en/download/) 
+-> [Google Protocol Buffer](https://nodejs.org/en/#home-downloadhead) 
 
 # Installing
-1. Clone the repository using `https://github.com/diazMafer/Embacy.io-Clone`
-2. Move to the directory where you clone the repository <br />
-3. Run `yarn` or `npm install` to install dependencies.<br />
-4. Run `npm run start` to see the example app at `http://localhost:8080`.
+1. Clone the repository using `https://github.com/her17138/Chat`
+2. Compile the .proto, this will generate message.pb.cc and message.pb.h `protoc -I=. --cpp_out=. mensaje.proto`
 
-## Commands
-- `npm run start` - start the dev server
-- `npm run build` - create a production ready build in `dist` folder
+## Compile the program with 
+- `g++ -std=c++11 client.cpp mensaje.pb.cc -lprotobuf -o client` - Compiles the client
+- `g++ -std=c++11 server.cpp mensaje.pb.cc -lprotobuf -o server` - Compiles the server
 
-## Built with
-This project features this tools
+## Execute the program with
+- `./client [name] [username] [ipServer] [port]`
+- `./server [port]` If no port is provided the default is de 9999
 
-- ⚛ **[React](https://reactjs.org)** 
-- 🛠 **[Babel](https://babeljs.io/)** — ES6 syntax, Airbnb & React/Recommended config
-- 🚀 **[Webpack](https://webpack.js.org/)**  — Hot Reloading, Code Splitting, Optimized Build
-- 💅 **[CSS](https://postcss.org/)** — Styled Components
-- 💖  **[Lint](https://eslint.org/docs/user-guide/getting-started)** — ESlint
+## Instruction client can execute
+ - To send a broadcast message type: **'broadcast <yourmesssage>**   
+ - To change status type: **'status <newstatus>'**             
+ - To see all users connected type: **'users'**                      
+ - To see all the information of a user type: **'<username>'**      
+ - To send a direct message type: **'<username> <yourmessage>'**
+ - To see information type: **'info'**                             
+ - To exit type: **'exit'**                                    
+
 
 ## Authors
-* **María Fernanda López Díaz** - *Initial work* - [diazMafer](https://github.com/diazMafer)
+* **María Fernanda López Díaz** - [diazMafer](https://github.com/diazMafer)
+* **Ana Lucía Hernández Ordoñez** - [her17138](https://github.com/her17138)
+* **David Uriel Soto** - [DavidSoto]()

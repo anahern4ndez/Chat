@@ -27,8 +27,8 @@ These instructions will get you a copy of the project up and running on your loc
 2. Compile the .proto, this will generate message.pb.cc and message.pb.h `protoc -I=. --cpp_out=. mensaje.proto`
 
 ## Compile the program with 
-- `g++ -std=c++11 client.cpp mensaje.pb.cc -lprotobuf -o client` - Compiles the client
-- `g++ -std=c++11 server.cpp mensaje.pb.cc -lprotobuf -o server` - Compiles the server
+- `g++ -std=c++11 client.cpp mensaje.pb.cc -lprotobuf -lpthread -o client` - Compiles the client
+- `g++ -std=c++11 server.cpp mensaje.pb.cc -lprotobuf -lpthread -o server` - Compiles the server
 
 ## Execute the program with
 - `./client [name] [username] [ipServer] [port]`

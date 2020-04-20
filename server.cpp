@@ -359,7 +359,7 @@ void *client_thread(void *params)
                     if (clientMessage.connectedusers().has_username())
                         recipient_username = clientMessage.connectedusers().username();
                     else if (clientMessage.connectedusers().has_userid()) 
-                        recipient_username = find_by_id(clientMessage.connectedusers().userid());
+                        recipient_username = find_by_id(clientMessage.connectedusers().userid(), thisClient.username);
                     recipient = clients.find(recipient_username);
                     if (recipient == clients.end()){
                         ErrorToClient(socketFd, "Username not found.");
@@ -474,13 +474,13 @@ void *client_thread(void *params)
                     goto loop;
                 }
                 std::string message_to_send = clientMessage.directmessage().message();
-                std::string recipient_username = ""
+                std::string recipient_username = "";
                 // si ha mandado el mensaje solo con el userid, encontrar el username correspodiente
                 // si no, tomar el username que el cliente envio 
                 if(clientMessage.directmessage().has_username())
                     recipient_username = clientMessage.directmessage().username();
                 else 
-                    recipient_username = find_by_id(clientMessage.directmessage().userid());
+                    recipient_username = find_by_id(clientMessage.directmessage().userid(), thisClient.username);
                 
                 std::unordered_map<std::string, Client *>::const_iterator recipient = clients.find(recipient_username);
                 if (recipient == clients.end()){

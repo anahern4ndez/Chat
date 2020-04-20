@@ -335,7 +335,7 @@ void *client_thread(void *params)
                     ErrorToClient(socketFd, "Failed to request connected users.");
                     goto loop;
                 }
-                if(clientMessage.connectedusers().userid() == 0){ //si userid 0, se devuelven todos los usuarios
+                if(!clientMessage.connectedusers().has_userid() && !clientMessage.connectedusers().has_username()){ //si userid 0, se devuelven todos los usuarios
                     ConnectedUserResponse *response = new ConnectedUserResponse();
                     for (auto user = clients.begin(); user != clients.end(); ++user)
                     {

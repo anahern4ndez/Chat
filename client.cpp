@@ -79,11 +79,11 @@ void *listen_thread(void *params){
             
             if(serverMessage.option() == ServerOpt::BROADCAST_S){
                 if(serverMessage.broadcast().has_username()){
-                    cout << "From: " << BLUE << serverMessage.broadcast().username() << DEFAULT << GREEN << "To Everyone" << DEFAULT << endl;
-                    cout << serverMessage.broadcast().message().c_str() << endl;
+                    cout << "From: " << BLUE << serverMessage.broadcast().username() << DEFAULT << GREEN << ". To: Everyone" << DEFAULT << endl;
+                    cout << "\t" << serverMessage.broadcast().message().c_str() << endl;
                 } else if(serverMessage.broadcast().has_userid()){
-                    cout << "From: " << BLUE << serverMessage.broadcast().userid() << DEFAULT << GREEN << "To Everyone" << DEFAULT << endl;
-                    cout << serverMessage.broadcast().message().c_str() << endl;
+                    cout << "From: " << BLUE << serverMessage.broadcast().userid() << DEFAULT << GREEN << ". To: Everyone" << DEFAULT << endl;
+                    cout << "\t" << serverMessage.broadcast().message().c_str() << endl;
                 } else {
                     cout << RED << "No username or userid sent by server" << DEFAULT << endl;
                 }
@@ -107,11 +107,11 @@ void *listen_thread(void *params){
             {
                 if(serverMessage.message().has_username()){
                     cout << "From: " << BLUE << 
-                    serverMessage.message().username() << DEFAULT << YELLOW << "(In Private): " << DEFAULT << endl;
-                    cout << serverMessage.message().message().c_str() << endl;
+                    serverMessage.message().username() << DEFAULT << YELLOW << " (In Private): " << DEFAULT << endl;
+                    cout << "\t" << serverMessage.message().message().c_str() << endl;
                 } else {
-                    cout << "From: " << BLUE << serverMessage.message().userid() << DEFAULT << YELLOW << "(In Private):" << DEFAULT << endl;
-                    cout << serverMessage.message().message().c_str() << endl;
+                    cout << "From: " << BLUE << serverMessage.message().userid() << DEFAULT << YELLOW << " (In Private):" << DEFAULT << endl;
+                    cout << "\t" << serverMessage.message().message().c_str() << endl;
                 }
             } else if (serverMessage.option() == ServerOpt::C_USERS_RESPONSE)
             {
@@ -122,13 +122,13 @@ void *listen_thread(void *params){
                     for (int i = 0; i < serverMessage.connecteduserresponse().connectedusers_size(); i++) {
                         ConnectedUser tmpUser = serverMessage.connecteduserresponse().connectedusers(i);
                         cout << "USERNAME: " << tmpUser.username() << endl;
-                        if(tmpUser.has_userid()){
+                        if(tmpUser.has_userid())
                              cout << "ID: " << tmpUser.userid() << endl;
-                             cout << "STATUS: " << tmpUser.status() << endl;
-                             cout << "IP: " << tmpUser.ip() << endl;
-                        } else {
-                            cout << "----------------------------------" << endl;
-                        }
+                        if(tmpUser.has_status())    
+                            cout << "STATUS: " << tmpUser.status() << endl;
+                        if(tmpUser.has_ip())    
+                            cout << "IP: " << tmpUser.ip() << endl;
+                        cout << "----------------------------------" << endl;
                     }
           
                 } else {
@@ -273,9 +273,9 @@ void *options_thread(void *args)
     cout<<endl;
     cout << endl;
     cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << endl;
-    cout << "* To send a broadcast message type: '<broadcast> <yourmessage>' *" << endl;
-    cout << "* To change status type: '<status> <newstatus>'                 *" << endl;
-    cout << "* To see all users connected type: '<users>'                    *" << endl;
+    cout << "* To send a broadcast message type: 'broadcast <yourmessage>' *" << endl;
+    cout << "* To change status type: 'status <newstatus>'                 *" << endl;
+    cout << "* To see all users connected type: 'users'                    *" << endl;
     cout << "* To see all the information of a user type: '<username>'       *" << endl;
     cout << "* To send a direct message type: '<username> <yourmessage>'     *" << endl;
     cout << "* To see information type: 'info'                               *" << endl;
@@ -312,9 +312,9 @@ void *options_thread(void *args)
         } else if (action == "info" || action == ""){
             cout << endl;
             cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << endl;
-            cout << "* To send a broadcast message type: '<broadcast> <yourmessage>' *" << endl;
-            cout << "* To change status type: '<status> <newstatus>'                 *" << endl;
-            cout << "* To see all users connected type: '<users>'                    *" << endl;
+            cout << "* To send a broadcast message type: 'broadcast <yourmessage>' *" << endl;
+            cout << "* To change status type: 'status <newstatus>'                 *" << endl;
+            cout << "* To see all users connected type: 'users'                    *" << endl;
             cout << "* To see all the information of a user type: '<username>'       *" << endl;
             cout << "* To send a direct message type: '<username> <yourmessage>'     *" << endl;
             cout << "* To see information type: 'info'                               *" << endl;

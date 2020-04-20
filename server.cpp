@@ -335,7 +335,7 @@ void *client_thread(void *params)
                     ErrorToClient(socketFd, "Failed to request connected users.");
                     goto loop;
                 }
-                if(!clientMessage.connectedusers().has_userid() && !clientMessage.connectedusers().has_username()){ //si userid 0, se devuelven todos los usuarios
+                if((!clientMessage.connectedusers().has_userid() || clientMessage.connectedusers().userid() == 0) && !clientMessage.connectedusers().has_username()){ //si userid 0, se devuelven todos los usuarios
                     ConnectedUserResponse *response = new ConnectedUserResponse();
                     for (auto user = clients.begin(); user != clients.end(); ++user)
                     {
@@ -567,17 +567,17 @@ void *timer(void *params) {
     Client client = *(Client *) params;
     ServerMessage serverMessage;
     std::string msgSerialized;
-
+    std::unordered_map<std::string, Client *>::const_iterator thisClient;
 
     while(1){
-        if(clients.find(client.username) != clients.end()){
+        if((thisClient = clients.find(client.username)) != clients.end()){
             if(tiemposInactivos[client.socketFd] < INACTIVE_TIME){
                 sleep(1); 
                 tiemposInactivos[client.socketFd]++;
                 if(tiemposInactivos[client.socketFd] == INACTIVE_TIME){
-                    client.status = "Inactivo";
+                    thisClient->second->status = "Inactivo";
                     ChangeStatusResponse *response = new ChangeStatusResponse();
-                    response->set_userid(client.socketFd);
+                    response->set_userid(thisClient->second->socketFd);
                     response->set_status("Inactivo");
                     serverMessage.set_option(ServerOpt::CHANGE_STATUS);
                     serverMessage.set_allocated_changestatusresponse(response);

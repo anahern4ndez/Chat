@@ -455,7 +455,7 @@ int main(int argc, char *argv[])
     int option;
     char buffer[MAX_BUFFER];
     
-    if (argc != 4) {
+    if (argc != 5) {
        fprintf(stderr, "./client [name] [username] [host] [port]\n");
        exit(1);
     }

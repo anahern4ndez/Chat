@@ -1,3 +1,11 @@
+/* 
+ * Client to connect with server using multithreading for hearing and sending request
+ * was made for a Chat project for 
+ * version: 20/04/2019
+ * Authors: Maria F. Lopez, Ana Lucia Hernandez, David Soto
+*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,15 +34,12 @@
 using namespace std;
 using namespace chat;
 
-#define MAX_BUFFER 8192//tamaño maximo de caracteres para mandar mensaje
-
-vector<int> chatsDirectos;
+#define MAX_BUFFER 8192 //max buffer size for sending and receiving messages from/to server
 
 pthread_t listen_client;
 pthread_t options_client;
 
-
-// opciones de mensaje para el cliente
+//options of requests client can make to server
 enum ClientOpt {
     SYNC = 1,
     CONNECTED_USERS = 2,
@@ -43,7 +48,8 @@ enum ClientOpt {
     DM = 5,
     ACKNOWLEDGE = 6
 };
-// opciones de mensaje para el server
+
+//options of responses from server to client
 enum ServerOpt {
     BROADCAST_S = 1,
     MESSAGE = 2,
@@ -55,15 +61,22 @@ enum ServerOpt {
     DM_RESPONSE = 8
 };
 
-
+/*
+ * Method to send error message to client and exit program
+ * params: char *msg - message to show 
+*/
 void error(const char *msg)
 {
     perror(msg);
     exit(0);
 }
 
-
-
+/*
+ * Thread for hearing responses of server, while socket is open 
+ * the client will hear for each response and show the client
+ * specific information depending on each Server Option
+ * params: int - socket
+*/
 void *listen_thread(void *params){
     int socketFd = *(int *)params;
     char buffer[MAX_BUFFER];
@@ -77,7 +90,7 @@ void *listen_thread(void *params){
     loop: while (1)
     {
         int bytes_received = recv(socketFd, buffer, MAX_BUFFER, 0);
-        // recepcion y parse de mensaje del server
+        // reception and parse for server messages
         if (bytes_received > 0){
             serverMessage.ParseFromString(buffer);
             
@@ -160,12 +173,23 @@ void *listen_thread(void *params){
     pthread_exit(0);
 }
 
+/*
+ * Method for spliting input of client in two
+ * params: input - whole input of client
+ * return: first word before a blank space
+*/
 string getFirst(string input){
     istringstream inputStream(input);
     string username;
     inputStream >> username;
     return username;
 }
+
+/*
+ * Method for spliting input of client in two
+ * params: input - whole input of client, toErase - first word before a blank space
+ * return: second word, first word after a blank space
+*/
 
 string getMessage(string input, string toErase) {
     size_t pos = input.find(toErase);
@@ -176,6 +200,10 @@ string getMessage(string input, string toErase) {
     return input;
 }
 
+/*
+ * Method for sending request to server
+ * params: message - serialized message , int - socket
+*/
 void sendBySocket(string message, int sockfd){
     char cstr[message.size() + 1];
     strcpy(cstr, message.c_str());
@@ -183,6 +211,13 @@ void sendBySocket(string message, int sockfd){
     send(sockfd, cstr, strlen(cstr), 0 );
 }
 
+/*
+ * Method to send a broadcast request to server 
+ * a ClientMessage variable is fill up with a BROADCAST REQUEST option 
+ * the BroadCastRequest is fill up with the message the user wants to send
+ * finally is send by the socket to the server
+ * params: int - socket, string - message user wants to send
+*/
 void broadCast(char buffer[], int sockfd, string message){
     string binary;
     ClientMessage clientMessage;
@@ -195,9 +230,18 @@ void broadCast(char buffer[], int sockfd, string message){
     sendBySocket(binary, sockfd);
     cout << BOLDBLACK << "Sending broadcast request to server" << DEFAULT << endl;
     cout << endl;
-
 }
 
+/*
+ * Method to send a direct message request to server 
+ * a ClientMessage variable is fill up with a DIRECT MESSAGE REQUEST option, 
+ * also with the user id of the user that's sending the message in this case
+ * the user id is the same as the socket
+ * the DirectMessageRequest is fill up with the message the user wants to send,
+ * and the recipient username he wants the server to send the message
+ * finally is send by the socket to the server
+ * params: int - socket, string - message user wants to send, recipient_username - username of destinatiry
+*/
 void directMS(int sockfd, string message, string recipient_username){
     string binary;
     ClientMessage clientMessage;
@@ -211,33 +255,38 @@ void directMS(int sockfd, string message, string recipient_username){
     sendBySocket(binary, sockfd);
     cout << BOLDBLACK << "Sending DM to:" << DEFAULT << BLUE << recipient_username.c_str() << DEFAULT << endl;
     cout << endl;
-
 }
 
+/*
+ * Method to send a change status request to server
+ * a ClientMessage variable if fill up with a CHANGE STATUS REQUEST opton
+ * the ChangeStatusRequest is fill up with the new status of the client
+ * params: status - newStatus, socket - socket int
+*/
 void changeStatus(string status, int sockfd){
     string binary;
     ClientMessage clientMessage;
     ServerMessage serverResponseMsg;
-
-
     ChangeStatusRequest *statusRequest = new ChangeStatusRequest();
     clientMessage.set_option(ClientOpt::STATUS);
     statusRequest->set_status(status);
-
-
     clientMessage.set_allocated_changestatus(statusRequest);
     clientMessage.SerializeToString(&binary);
-
     sendBySocket(binary, sockfd);
     cout << BOLDBLACK << "Sending change status request to server" << DEFAULT << endl;
     cout << endl;
-
 }
 
+/*
+ * Method to send a request to see all users to server
+ * a ClientMessage variable if fill up with a CONNECTED USER opton
+ * the connctedUserRequest is fill a user id of 0 that stands for 
+ * the option to get all users connected to server username
+ * params: int socket
+*/
 void connectedUsers(char buffer[], int socketfd){
     string binary;
     ClientMessage ClientMessage;
-
     connectedUserRequest *usersRequest = new connectedUserRequest();
     ClientMessage.set_option(ClientOpt::CONNECTED_USERS);
     usersRequest->set_userid(0);
@@ -246,13 +295,18 @@ void connectedUsers(char buffer[], int socketfd){
     sendBySocket(binary, socketfd);
     cout << BOLDBLACK << "Sending connected user Request to server" << DEFAULT << endl;
     cout << endl;
-    
 }
 
+/*
+ * Method to send a request to see all users to server
+ * a ClientMessage variable if fill up with a CONNECTED USER opton
+ * the connctedUserRequest is fill a user id of 0 that stands for 
+ * the option to get all users connected to server username
+ * params: int socket
+*/
 void requestUserIfo(int socketfd, string username){
     string binary;
     ClientMessage ClientMessage;
-
     connectedUserRequest *usersRequest = new connectedUserRequest();
     ClientMessage.set_option(ClientOpt::CONNECTED_USERS);
     usersRequest->set_username(username);
@@ -261,9 +315,14 @@ void requestUserIfo(int socketfd, string username){
     sendBySocket(binary, socketfd);
     cout << BOLDBLACK << "Sending connected user Request to server" << DEFAULT << endl;
     cout << endl;
-    
 }
 
+/*
+ * Thread for sending requests to server while socket is open
+ * the way the user selects an option is by writing it as the 
+ * firts word of his whole inppu
+ * params: int socket
+*/
 void *options_thread(void *args)
 {
     string input;
@@ -291,10 +350,8 @@ void *options_thread(void *args)
     {
 
         getline(cin, input);
-
         string action = getFirst(input);
         string message = getMessage(input, action);
-
         if (action == "broadcast"){
             broadCast(buffer, socketFd, message);
             sleep(3);
@@ -303,14 +360,13 @@ void *options_thread(void *args)
             sleep(3);
         } else if (action == "exit"){
             memset(&buffer[0], 0, sizeof(buffer)); //clear buffer
-            send(socketFd, NULL, 0, 0); //enviar mensaje vacio para notificar al servidor
-            pthread_cancel(listen_client); //request para que el otro thread termine
+            send(socketFd, NULL, 0, 0); //send the message to notify the server
+            pthread_cancel(listen_client); //request to ask the listen thread to finish 
             cout << "\nGoodbye!" << endl;
             close(socketFd);
             pthread_exit(0);
             sleep(2);
         } else if (action == "users"){
-            // printf("entro");
             connectedUsers(buffer, socketFd);
             sleep(5);
         } else if (action == "info" || action == ""){
@@ -325,7 +381,6 @@ void *options_thread(void *args)
             cout << "* To exit type: 'exit'                                          *" << endl; 
             cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl;
             cout << endl;
-
         } else {
             if(message == ""){
                 requestUserIfo(socketFd, action);
@@ -333,27 +388,29 @@ void *options_thread(void *args)
                 directMS(socketFd, message, action);
                 sleep(3);
             }
-            
         }
         
     }
     
 }
 
+/*
+ * Method to synch user with the server 
+ * the username, ip and socket are send to server 
+*/
+
 void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], string ip, char *argv[]){
     int n;
     MyInfoSynchronize *clientInfo = new MyInfoSynchronize();
-    clientInfo->set_username(argv[1]);
+    clientInfo->set_username(argv[2]);
     clientInfo->set_ip(ip);
-    // Se crea instancia de Mensaje, se setea los valores deseados
     ClientMessage clientMessage;
     clientMessage.set_option(ClientOpt::SYNC);
     clientMessage.set_userid(sockfd);
     clientMessage.set_allocated_synchronize(clientInfo);
-    // Se serializa el message a string
+    //Message is serialize
     string binary;
     clientMessage.SerializeToString(&binary);
-    // envio de mensaje de cliente a server 
     char cstr[binary.size() + 1];
     strcpy(cstr, binary.c_str());
     // send to socket
@@ -364,7 +421,7 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], string i
     if (n < 0) 
          error("ERROR reading from socket");
 
-        //read server response
+    //read server response
     ServerMessage serverResponseMsg;
     serverResponseMsg.ParseFromString(buffer);
     if(serverResponseMsg.option() == ServerOpt::ERROR){
@@ -378,18 +435,14 @@ void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], string i
     // client response (acknowledge)
     MyInfoAcknowledge * infoAck(new MyInfoAcknowledge);
     infoAck->set_userid(sockfd);
-    ClientMessage clientAcknowledge; //no se como hacerle "clear" al clientmessage entonces creare otro :( 
+    ClientMessage clientAcknowledge; 
     clientAcknowledge.set_option(ClientOpt::ACKNOWLEDGE);
-    clientAcknowledge.set_userid(sockfd); //hay que cambiarlo para que sea dinamico
+    clientAcknowledge.set_userid(sockfd); 
     clientAcknowledge.set_allocated_acknowledge(infoAck);
-    // Se serializa el message a string
     string binarya;
     clientAcknowledge.SerializeToString(&binarya);
-    
-    // envio de mensaje de cliente a server 
     char cstr2[binarya.size() + 1];
     strcpy(cstr2, binarya.c_str());
-
     send(sockfd, cstr2, strlen(cstr2), 0);
 }
 
@@ -403,15 +456,15 @@ int main(int argc, char *argv[])
     char buffer[MAX_BUFFER];
     
     if (argc != 4) {
-       fprintf(stderr, "./client [username] [host] [port]\n");
+       fprintf(stderr, "./client [name] [username] [host] [port]\n");
        exit(1);
     }
 
-    portno = atoi(argv[3]);
+    portno = atoi(argv[4]);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) 
         error("ERROR opening socket");
-    server = gethostbyname(argv[2]);
+    server = gethostbyname(argv[3]);
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
         exit(0);

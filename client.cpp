@@ -99,7 +99,7 @@ void *listen_thread(void *params){
     
             } 
             else if(serverMessage.option() == ServerOpt::DM_RESPONSE){
-                if(serverMessage.directmessageresponse().messagestatus() == "SENT")
+                if(serverMessage.directmessageresponse().messagestatus() == "SENT" || serverMessage.directmessageresponse().has_messagestatus())
                     cout << MAGENTA << "Message sent successfully!" << DEFAULT << endl;
                 else
                     cout << RED << "Failed to send message." << endl;
@@ -271,6 +271,17 @@ void *options_thread(void *args)
     int idDestinatary;
     printf("Thread for sending requests to server created\n");
     cout<<endl;
+    cout << endl;
+    cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << endl;
+    cout << "* To send a broadcast message type: '<broadcast> <yourmessage>' *" << endl;
+    cout << "* To change status type: '<status> <newstatus>'                 *" << endl;
+    cout << "* To see all users connected type: '<users>'                    *" << endl;
+    cout << "* To see all the information of a user type: '<username>'       *" << endl;
+    cout << "* To send a direct message type: '<username> <yourmessage>'     *" << endl;
+    cout << "* To see information type: 'info'                               *" << endl;
+    cout << "* To exit type: 'exit'                                          *" << endl; 
+    cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl;
+    cout << endl;
 
     while (1)
     {
@@ -295,7 +306,7 @@ void *options_thread(void *args)
             pthread_exit(0);
             sleep(2);
         } else if (action == "users"){
-            printf("entro");
+            // printf("entro");
             connectedUsers(buffer, socketFd);
             sleep(5);
         } else if (action == "info" || action == ""){

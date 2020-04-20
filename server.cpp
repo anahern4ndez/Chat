@@ -251,6 +251,7 @@ void *client_thread(void *params)
     struct Client thisClient;
     char buffer[MAX_BUFFER];
     bool can_connect = false; // se permitira el envio de mensajes si se realizo el handshake
+    thisClient.userid = socketFd;
     std::string msgSerialized;
     ClientMessage clientMessage;
     ClientMessage clientAcknowledge;
@@ -306,7 +307,7 @@ void *client_thread(void *params)
                 recv(socketFd, buffer, MAX_BUFFER, 0);
                 clientAcknowledge.ParseFromString(buffer);
                 if(!clientAcknowledge.has_acknowledge()){
-                    ErrorToClient(socketFd, "Failed to Acknowledge");
+                    ErrorToClient(socketFd, "Failed to Synchronize");
                     pthread_exit(0);
                 }
                 thisClient.socketFd = socketFd;
@@ -352,16 +353,17 @@ void *client_thread(void *params)
                     char cstr[msgSerialized.size() + 1];
                     strcpy(cstr, msgSerialized.c_str());
                     send(socketFd, cstr, msgSerialized.size() + 1, 0);
-                } else if(clientMessage.connectedusers().has_username()) {
+                } else { // *********************
                     std::unordered_map<std::string, Client *>::const_iterator recipient;
-                    std::string recipient_username;
-                    if (clientMessage.connectedusers().has_username()){
+                    std::string recipient_username = "";
+                    if (clientMessage.connectedusers().has_username())
                         recipient_username = clientMessage.connectedusers().username();
-                        recipient = clients.find(recipient_username);
-                        if (recipient == clients.end()){
-                            ErrorToClient(socketFd, "Username not found.");
-                            goto loop;
-                        }
+                    else if (clientMessage.connectedusers().has_userid()) 
+                        recipient_username = find_by_id(clientMessage.connectedusers().userid());
+                    recipient = clients.find(recipient_username);
+                    if (recipient == clients.end()){
+                        ErrorToClient(socketFd, "Username not found.");
+                        goto loop;
                     }
                     Client *info = recipient->second;
                     ConnectedUserResponse *response = new ConnectedUserResponse();
@@ -391,7 +393,7 @@ void *client_thread(void *params)
                 }
 
                 ChangeStatusRequest statusReq = clientMessage.changestatus();
-                std::cout << "Change Status Request for:" << thisClient.username << "new status: " << statusReq.status() << std::endl;
+                std::cout << "Change Status Request for:" << thisClient.username << ". New status: " << statusReq.status() << std::endl;
                 std::string new_status = statusReq.status();
 
                 ChangeStatusResponse *response = new ChangeStatusResponse();
@@ -472,10 +474,17 @@ void *client_thread(void *params)
                     goto loop;
                 }
                 std::string message_to_send = clientMessage.directmessage().message();
-                std::string recipient_username = clientMessage.directmessage().username();
+                std::string recipient_username = ""
+                // si ha mandado el mensaje solo con el userid, encontrar el username correspodiente
+                // si no, tomar el username que el cliente envio 
+                if(clientMessage.directmessage().has_username())
+                    recipient_username = clientMessage.directmessage().username();
+                else 
+                    recipient_username = find_by_id(clientMessage.directmessage().userid());
+                
                 std::unordered_map<std::string, Client *>::const_iterator recipient = clients.find(recipient_username);
                 if (recipient == clients.end()){
-                    ErrorToClient(socketFd, "Username not found.");
+                    ErrorToClient(socketFd, "Username of given UserID not found.");
                     goto loop;
                 }
                 // intento de enviar mensaje a recipient

@@ -47,4 +47,4 @@ These instructions will get you a copy of the project up and running on your loc
 ## Authors
 * **María Fernanda López Díaz** - [diazMafer](https://github.com/diazMafer)
 * **Ana Lucía Hernández Ordoñez** - [her17138](https://github.com/her17138)
-* **David Uriel Soto** - [DavidSoto]()
+* **David Uriel Soto** - [DavidSoto5317](https://github.com/DavidSoto5317)

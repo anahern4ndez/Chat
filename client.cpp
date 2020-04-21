@@ -399,7 +399,7 @@ void *options_thread(void *args)
             cout << "* To see all users connected type: 'users'                         *" << endl;
             cout << "* To see all the information of a user type: '<username>'          *" << endl;
             cout << "* To send a direct message type: '<username> <yourmessage>'        *" << endl;
-            cout << "* To send a direct message usign id: 'id <username> <yourmessage>' *" << endl;
+            cout << "* To send a direct message using id: 'id <username> <yourmessage>' *" << endl;
             cout << "* To see information type: 'info'                                  *" << endl;
             cout << "* To exit type: 'exit'                                             *" << endl; 
             cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * " << endl;

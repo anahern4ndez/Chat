@@ -402,7 +402,7 @@ void *options_thread(void *args)
 void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], string ip, char *argv[]){
     int n;
     MyInfoSynchronize *clientInfo = new MyInfoSynchronize();
-    clientInfo->set_username(argv[2]);
+    clientInfo->set_username(argv[1]);
     clientInfo->set_ip(ip);
     ClientMessage clientMessage;
     clientMessage.set_option(ClientOpt::SYNC);
@@ -455,16 +455,16 @@ int main(int argc, char *argv[])
     int option;
     char buffer[MAX_BUFFER];
     
-    if (argc != 5) {
+    if (argc != 4) {
        fprintf(stderr, "./client [username] [host] [port]\n");
        exit(1);
     }
 
-    portno = atoi(argv[4]);
+    portno = atoi(argv[3]);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) 
         error("ERROR opening socket");
-    server = gethostbyname(argv[3]);
+    server = gethostbyname(argv[2]);
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
         exit(0);

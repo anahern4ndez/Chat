@@ -257,7 +257,7 @@ void directMS(int sockfd, string message, string recipient_username, int id){
     if (id != 0) {
         directMsRequest->set_userid(id);
     } else {
-        directMsRequest->set_userid(id);
+        directMsRequest->set_username(recipient_username);
     }
 
     clientMessage.set_option(ClientOpt::DM);

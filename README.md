@@ -31,7 +31,7 @@ These instructions will get you a copy of the project up and running on your loc
 - `g++ -std=c++11 server.cpp mensaje.pb.cc -lprotobuf -lpthread -o server` - Compiles the server
 
 ## Execute the program with
-- `./client [name] [username] [ipServer] [port]`
+- `./client [username] [ipServer] [port]`
 - `./server [port]` If no port is provided the default is de 9999
 
 ## Instructions client can execute

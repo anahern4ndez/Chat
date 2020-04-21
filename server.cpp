@@ -359,6 +359,9 @@ void *client_thread(void *params)
                             if(user->first != thisClient.username){
                                 ConnectedUser *user_info =  response->add_connectedusers();
                                 user_info->set_username(user->first);
+                                user_info->set_ip(user->second->ip_address);
+                                user_info->set_status(user->second->status);
+                                user_info->set_userid(user->second->userid);
                             }                        
                     }
 

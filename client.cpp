@@ -39,6 +39,7 @@ using namespace chat;
 pthread_t listen_client;
 pthread_t options_client;
 string lastUser;
+string lastMessage;
 
 //options of requests client can make to server
 enum ClientOpt {
@@ -110,6 +111,8 @@ void *listen_thread(void *params){
             else if (serverMessage.option() == ServerOpt::BROADCAST_RESPONSE)
             {
                 cout << BOLDBLACK << "Server response: " << serverMessage.broadcastresponse().messagestatus() << DEFAULT << endl;
+                cout << "From Me to" <<  DEFAULT << YELLOW << " To Everyone: " << DEFAULT << endl;
+                cout << "\t" << lastMessage << endl;
                
             } else if (serverMessage.option() == ServerOpt::CHANGE_STATUS)
             {
@@ -120,7 +123,7 @@ void *listen_thread(void *params){
                 if(serverMessage.directmessageresponse().messagestatus() == "SENT" || serverMessage.directmessageresponse().has_messagestatus()){
                     cout << MAGENTA << "Message sent successfully!" << DEFAULT << endl;
                     cout << "From Me to " << BLUE << lastUser << DEFAULT << YELLOW << " (In Private): " << DEFAULT << endl;
-                    cout << "\t" << serverMessage.message().message().c_str() << endl;
+                    cout << "\t" << lastMessage << endl;
                 }else{
                     cout << RED << "Failed to send message." << endl;
                 }
@@ -357,6 +360,7 @@ void *options_thread(void *args)
         string action = getFirst(input);
         string message = getMessage(input, action);
         if (action == "broadcast"){
+            lastMessage = message;
             broadCast(buffer, socketFd, message);
             sleep(3);
         } else if (action == "status"){
@@ -390,6 +394,7 @@ void *options_thread(void *args)
                 requestUserIfo(socketFd, action);
             } else {
                 lastUser = action;
+                lastMessage = message;
                 directMS(socketFd, message, action);
                 sleep(3);
             }
@@ -407,7 +412,7 @@ void *options_thread(void *args)
 void synchUser(struct sockaddr_in serv_addr, int sockfd, char buffer[], string ip, char *argv[]){
     int n;
     MyInfoSynchronize *clientInfo = new MyInfoSynchronize();
-    clientInfo->set_username(argv[2]);
+    clientInfo->set_username(argv[1]);
     clientInfo->set_ip(ip);
     ClientMessage clientMessage;
     clientMessage.set_option(ClientOpt::SYNC);
@@ -465,11 +470,11 @@ int main(int argc, char *argv[])
        exit(1);
     }
 
-    portno = atoi(argv[4]);
+    portno = atoi(argv[3]);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) 
         error("ERROR opening socket");
-    server = gethostbyname(argv[3]);
+    server = gethostbyname(argv[2]);
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
         exit(0);

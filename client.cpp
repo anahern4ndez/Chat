@@ -249,12 +249,17 @@ void broadCast(char buffer[], int sockfd, string message){
  * finally is send by the socket to the server
  * params: int - socket, string - message user wants to send, recipient_username - username of destinatiry
 */
-void directMS(int sockfd, string message, string recipient_username){
+void directMS(int sockfd, string message, string recipient_username, int id){
     string binary;
     ClientMessage clientMessage;
     DirectMessageRequest *directMsRequest = new DirectMessageRequest();
     directMsRequest->set_message(message);
-    directMsRequest->set_username(recipient_username);
+    if (id != 0) {
+        directMsRequest->set_userid(id);
+    } else {
+        directMsRequest->set_userid(id);
+    }
+
     clientMessage.set_option(ClientOpt::DM);
     clientMessage.set_userid(sockfd);
     clientMessage.set_allocated_directmessage(directMsRequest);
@@ -342,15 +347,16 @@ void *options_thread(void *args)
     printf("Thread for sending requests to server created\n");
     cout<<endl;
     cout << endl;
-    cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << endl;
-    cout << "* To send a broadcast message type: 'broadcast <yourmessage>'   *" << endl;
-    cout << "* To change status type: 'status <newstatus>'                   *" << endl;
-    cout << "* To see all users connected type: 'users'                      *" << endl;
-    cout << "* To see all the information of a user type: '<username>'       *" << endl;
-    cout << "* To send a direct message type: '<username> <yourmessage>'     *" << endl;
-    cout << "* To see information type: 'info'                               *" << endl;
-    cout << "* To exit type: 'exit'                                          *" << endl; 
-    cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl;
+    cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  *" << endl;
+    cout << "* To send a broadcast message type: 'broadcast <yourmessage>'      *" << endl;
+    cout << "* To change status type: 'status <newstatus>'                      *" << endl;
+    cout << "* To see all users connected type: 'users'                         *" << endl;
+    cout << "* To see all the information of a user type: '<username>'          *" << endl;
+    cout << "* To send a direct message type: '<username> <yourmessage>'        *" << endl;
+    cout << "* To send a direct message usign id: 'id <username> <yourmessage>' *" << endl;
+    cout << "* To see information type: 'info'                                  *" << endl;
+    cout << "* To exit type: 'exit'                                             *" << endl; 
+    cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * " << endl;
     cout << endl;
 
     while (1)
@@ -377,17 +383,26 @@ void *options_thread(void *args)
         } else if (action == "users"){
             connectedUsers(buffer, socketFd);
             sleep(5);
+        } else if (action == "id"){
+            string userId = getFirst(message);
+            int id = stoi(userId);
+            string newMessage = getMessage(message, userId);
+            lastUser = userId;
+            lastMessage = newMessage;
+            directMS(socketFd, newMessage, "", id);
+
         } else if (action == "info" || action == ""){
             cout << endl;
-            cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *" << endl;
-            cout << "* To send a broadcast message type: 'broadcast <yourmessage>'   *" << endl;
-            cout << "* To change status type: 'status <newstatus>'                   *" << endl;
-            cout << "* To see all users connected type: 'users'                      *" << endl;
-            cout << "* To see all the information of a user type: '<username>'       *" << endl;
-            cout << "* To send a direct message type: '<username> <yourmessage>'     *" << endl;
-            cout << "* To see information type: 'info'                               *" << endl;
-            cout << "* To exit type: 'exit'                                          *" << endl; 
-            cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl;
+            cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  *" << endl;
+            cout << "* To send a broadcast message type: 'broadcast <yourmessage>'      *" << endl;
+            cout << "* To change status type: 'status <newstatus>'                      *" << endl;
+            cout << "* To see all users connected type: 'users'                         *" << endl;
+            cout << "* To see all the information of a user type: '<username>'          *" << endl;
+            cout << "* To send a direct message type: '<username> <yourmessage>'        *" << endl;
+            cout << "* To send a direct message usign id: 'id <username> <yourmessage>' *" << endl;
+            cout << "* To see information type: 'info'                                  *" << endl;
+            cout << "* To exit type: 'exit'                                             *" << endl; 
+            cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * " << endl;
             cout << endl;
         } else {
             if(message == ""){
@@ -395,7 +410,7 @@ void *options_thread(void *args)
             } else {
                 lastUser = action;
                 lastMessage = message;
-                directMS(socketFd, message, action);
+                directMS(socketFd, message, action, 0);
                 sleep(3);
             }
         }

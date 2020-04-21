@@ -96,6 +96,7 @@ struct Client
 
 bool newRequest;
 bool changeStatus;
+chat_data data;
 
 struct thread_params { chat_data *c_data; struct sockaddr_in *cli_addr; };
 
@@ -130,7 +131,6 @@ int main(int argc, char *argv[])
     long port = 9999; // el puerto default es 9999
     char cli_addr_addr[INET_ADDRSTRLEN];
     pthread_t messagesThread;
-    chat_data data;
     if (argc == 2)
     {
         port = atoi(argv[1]);
@@ -214,11 +214,19 @@ void *listen_to_connections(void *params){
     int newsockfd;
     while (1)
     {
+
         clilen = sizeof data->cli_addr;
         newsockfd = accept(data->c_data->socketFd, (struct sockaddr *)&data->cli_addr, &clilen);
         if (newsockfd < 0)
             error("ERROR en accept()");
-        new_client(data->c_data, newsockfd);
+        if(data->c_data->client_num < MAX_CONNECTIONS){
+            new_client(data->c_data, newsockfd);
+        }
+        else {
+            std::cout << "Reached limit of connected users." << std::endl;
+            ErrorToClient(newsockfd, "Reached limit of connected users.");
+            close(newsockfd);
+        }
     }
     for (int i = 0; i < data->c_data->client_num; i++)
     {
@@ -531,6 +539,7 @@ void *client_thread(void *params)
         }
         else if (read_bytes == 0){
             clients.erase(thisClient.username);
+            data.client_num = data.client_num -1;
             close(socketFd);
             std::cout << "User "<< thisClient.username <<" exited. Closing socket " << socketFd << "."<< std::endl;
             pthread_exit(0);

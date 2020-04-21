@@ -38,6 +38,7 @@ using namespace chat;
 
 pthread_t listen_client;
 pthread_t options_client;
+string lastUser;
 
 //options of requests client can make to server
 enum ClientOpt {
@@ -116,10 +117,13 @@ void *listen_thread(void *params){
     
             } 
             else if(serverMessage.option() == ServerOpt::DM_RESPONSE){
-                if(serverMessage.directmessageresponse().messagestatus() == "SENT" || serverMessage.directmessageresponse().has_messagestatus())
+                if(serverMessage.directmessageresponse().messagestatus() == "SENT" || serverMessage.directmessageresponse().has_messagestatus()){
                     cout << MAGENTA << "Message sent successfully!" << DEFAULT << endl;
-                else
+                    cout << "From Me to " << BLUE << lastUser << DEFAULT << YELLOW << " (In Private): " << DEFAULT << endl;
+                    cout << "\t" << serverMessage.message().message().c_str() << endl;
+                }else{
                     cout << RED << "Failed to send message." << endl;
+                }
             } else if (serverMessage.option() == ServerOpt::MESSAGE)
             {
                 if(serverMessage.message().has_username()){
@@ -385,6 +389,7 @@ void *options_thread(void *args)
             if(message == ""){
                 requestUserIfo(socketFd, action);
             } else {
+                lastUser = action;
                 directMS(socketFd, message, action);
                 sleep(3);
             }

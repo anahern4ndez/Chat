@@ -39,6 +39,7 @@ These instructions will get you a copy of the project up and running on your loc
  - To change status type: **'status newstatus'**             
  - To see all users connected type: **'users'**                      
  - To see all the information of a user type: **'username'**      
+ - To send a direct message with user id type: **'id userid yourmessage'**
  - To send a direct message type: **'username yourmessage'**
  - To see information type: **'info'**                             
  - To exit type: **'exit'**                                    

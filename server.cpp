@@ -333,7 +333,7 @@ void *client_thread(void *params)
                 thisClient.socketFd = socketFd;
                 thisClient.received_messages = init_queue();
                 thisClient.sent_messages = init_queue();
-                thisClient.userid = clientMessage.userid();
+                thisClient.userid = socketFd;
                 thisClient.status = "Activo";
                 thisClient.username = clientMessage.synchronize().username();
                 //add new client to map of clients
